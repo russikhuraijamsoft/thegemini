@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-border: #ebd5da;
+  --color-background: #ffffff;
+  --color-foreground: #800000;
+  --color-muted: #fcf2f4;
+  --color-muted-foreground: #800000;
+  --color-primary: #800000;
+  --color-primary-foreground: #ffffff;
+
+  /* Custom Solid Maroon Palette */
+  --color-maroon-50: #fdf5f6;
+  --color-maroon-100: #fbe6ea;
+  --color-maroon-200: #f6ced6;
+  --color-maroon-300: #efa3b2;
+  --color-maroon-400: #e36a83;
+  --color-maroon-500: #d0395c;
+  --color-maroon-600: #b01b3f;
+  --color-maroon-700: #930d2f;
+  --color-maroon-800: #800000;
+  --color-maroon-900: #680016;
+  --color-maroon-950: #42000c;
+
+  /* Overriding system indigo & slate to guarantee solid maroon & white throughout the entire system */
+  --color-indigo-50: #fdf5f6;
+  --color-indigo-100: #fbe6ea;
+  --color-indigo-200: #f6ced6;
+  --color-indigo-300: #efa3b2;
+  --color-indigo-400: #e36a83;
+  --color-indigo-500: #9e1234;
+  --color-indigo-600: #800000;
+  --color-indigo-700: #680016;
+  --color-indigo-800: #550011;
+  --color-indigo-900: #42000c;
+  --color-indigo-950: #2d0007;
+
+  --color-slate-950: #ffffff;
+  --color-slate-900: #800000;
+  --color-slate-800: #800000;
+  --color-slate-700: #800000;
+  --color-slate-600: #800000;
+  --color-slate-500: #8d1c31;
+  --color-slate-400: #a8384f;
+  --color-slate-300: #dcabb5;
+  --color-slate-200: #ebd5da;
+  --color-slate-100: #fdf5f6;
+  --color-slate-50: #ffffff;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  color: #800000;
+}
+
+.dark {
+  --color-background: #ffffff;
+  --color-foreground: #800000;
+  --color-border: #ebd5da;
+  --color-muted: #fdf5f6;
+  --color-muted-foreground: #800000;
+  --color-primary: #800000;
+  --color-primary-foreground: #ffffff;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: #ffffff;
+  color: #800000;
+}
+
+/* Custom scrollbars in solid maroon & white */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dcabb5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #800000;
+}
+

@@ -1,0 +1,149 @@
+import React from 'react';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AppShell } from '../shared/layouts/AppShell';
+import { useAuth } from '../core/auth/AuthContext';
+import { SplashScreen } from '../shared/components/SplashScreen';
+
+// Auth Pages
+import { AuthLayout } from '../features/auth/pages/AuthLayout';
+import { LoginPage } from '../features/auth/pages/LoginPage';
+import { RegisterPage } from '../features/auth/pages/RegisterPage';
+import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
+import { PhoneAuthPage } from '../features/auth/pages/PhoneAuthPage';
+import { PinAuthPage } from '../features/auth/pages/PinAuthPage';
+
+// Dashboard
+import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+
+// POS
+import { PosPage } from '../features/pos/pages/PosPage';
+
+// KDS
+import { KdsPage } from '../features/kds/pages/KdsPage';
+
+// Purchasing
+import { PurchasingPage } from '../features/purchasing/pages/PurchasingPage';
+
+// Inventory
+import { InventoryPage } from '../features/inventory/pages/InventoryPage';
+
+// CRM
+import { CrmPage } from '../features/crm/pages/CrmPage';
+
+// Manufacturing
+import { ManufacturingPage } from '../features/manufacturing/pages/ManufacturingPage';
+
+// Table Management
+import { TableManagementPage } from '../features/table-management/pages/TableManagementPage';
+
+// Finance
+import { FinancePage } from '../features/finance/pages/FinancePage';
+import { HrPage } from '../features/hr/pages/HrPage';
+
+// AI
+import { AiPage } from '../features/ai/pages/AiPage';
+
+// Reports
+import { ReportsPage } from '../features/reports/pages/ReportsPage';
+
+// Admin / Settings
+import { AdminPage } from '../features/admin/pages/AdminPage';
+
+// Auth Guard
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <SplashScreen />;
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+export const router = createBrowserRouter([
+  {
+    path: '/auth',
+    element: <AuthLayout />,
+    children: [
+      { index: true, element: <LoginPage /> },
+      { path: 'register', element: <RegisterPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'phone', element: <PhoneAuthPage /> },
+      { path: 'pin', element: <PinAuthPage /> },
+    ]
+  },
+  {
+    path: '/',
+    element: (
+      <RequireAuth>
+        <AppShell />
+      </RequireAuth>
+    ),
+    children: [
+      {
+        index: true,
+        element: <DashboardPage />,
+      },
+      {
+        path: 'pos',
+        element: <PosPage />,
+      },
+      {
+        path: 'kds',
+        element: <KdsPage />,
+      },
+      {
+        path: 'purchasing',
+        element: <PurchasingPage />,
+      },
+      {
+        path: 'inventory',
+        element: <InventoryPage />,
+      },
+      {
+        path: 'manufacturing',
+        element: <ManufacturingPage />,
+      },
+      {
+        path: 'tables',
+        element: <TableManagementPage />,
+      },
+      {
+        path: 'crm',
+        element: <CrmPage />,
+      },
+      {
+        path: 'hr',
+        element: <HrPage />,
+      },
+      {
+        path: 'finance',
+        element: <FinancePage />,
+      },
+      {
+        path: 'ai',
+        element: <AiPage />,
+      },
+      {
+        path: 'reports',
+        element: <ReportsPage />,
+      },
+      {
+        path: 'settings',
+        element: <AdminPage />,
+      },
+      {
+        path: '*',
+        element: <Navigate to="/" replace />,
+      }
+    ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
+  }
+]);

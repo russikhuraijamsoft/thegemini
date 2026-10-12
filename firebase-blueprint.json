@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Menu item in Talk of the Town POS",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "active": { "type": "boolean" },
+        "isAvailable": { "type": "boolean" }
+      },
+      "required": ["id", "name", "category", "price", "active"]
+    },
+    "MenuItemSize": {
+      "title": "MenuItemSize",
+      "description": "Size variant for a menu item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "item_id": { "type": "string" },
+        "size": { "type": "string", "enum": ["Small", "Medium", "Large", "Standard"] },
+        "price": { "type": "number" },
+        "cost_price": { "type": "number" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["item_id", "size", "price", "active"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order in POS",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "orderType": { "type": "string", "enum": ["DINE_IN", "TAKEAWAY", "DELIVERY"] },
+        "tableNumber": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["CASH", "UPI", "CARD", "SPLIT"] },
+        "status": { "type": "string", "enum": ["PENDING", "PAID", "CANCELLED", "REFUNDED"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderNumber", "subtotal", "tax", "total", "status"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "KDS / KOT ticket for kitchen",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderId", "orderNumber", "status"]
+    }
+  },
+  "firestore": {
+    "/pos_products/{productId}": {
+      "schema": "Product",
+      "description": "Active and archived menu items"
+    },
+    "/menu_item_sizes/{sizeId}": {
+      "schema": "MenuItemSize",
+      "description": "Size variants for menu items"
+    },
+    "/pos_orders/{orderId}": {
+      "schema": "Order",
+      "description": "Point of sale orders"
+    },
+    "/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "Kitchen Display System tickets"
+    }
+  }
+}

@@ -1,0 +1,67 @@
+name: talkos
+description: TalkOS - Enterprise Restaurant Operating System
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # State Management & DI
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.4
+  
+  # Navigation
+  go_router: ^12.1.1
+  
+  # Firebase Services
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_crashlytics: ^3.4.9
+  
+  # Offline Storage (Local DB)
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  
+  # Data Modeling
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+  
+  # Network & Utilities
+  dio: ^5.4.0
+  intl: ^0.18.1
+  shared_preferences: ^2.2.2
+  uuid: ^4.3.3
+  
+  # UI & Design System
+  google_fonts: ^6.1.0
+  flex_color_scheme: ^7.3.1
+  flutter_svg: ^2.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  custom_lint: ^0.5.7
+  riverpod_lint: ^2.3.9
+  
+  # Code Generation
+  build_runner: ^2.4.7
+  freezed: ^2.4.6
+  json_serializable: ^8.0.0
+  riverpod_generator: ^2.3.9
+  isar_generator: ^3.1.0+1
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/env/
