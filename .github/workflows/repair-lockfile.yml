@@ -1,13 +1,10 @@
-name: Repair TalkOS lockfile (temporary)
+name: Repair TalkOS lockfile
 on:
-  push:
-    branches:
-      - fix/talkos-ci-dependencies
-    paths:
-      - .github/workflows/repair-lockfile.yml
   workflow_dispatch:
+
 permissions:
   contents: write
+
 jobs:
   regenerate:
     runs-on: ubuntu-latest
@@ -16,18 +13,22 @@ jobs:
         with:
           ref: fix/talkos-ci-dependencies
           persist-credentials: true
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Regenerate consistent dependency lockfile
         run: |
-          rm package-lock.json
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
-          npm ci --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+
       - name: Commit repaired lockfile to repair branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
-          git commit -m "fix: regenerate npm lockfile" || exit 0
-          git push origin HEAD:fix/talkos-ci-dependencies
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: regenerate npm dependency lockfile"
+            git push origin HEAD:fix/talkos-ci-dependencies
+          fi
