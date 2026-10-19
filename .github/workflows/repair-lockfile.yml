@@ -22,8 +22,8 @@ jobs:
       - name: Regenerate consistent dependency lockfile
         run: |
           rm package-lock.json
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --legacy-peer-deps
+          npm ci --ignore-scripts --no-audit --no-fund --legacy-peer-deps
       - name: Commit repaired lockfile to repair branch
         run: |
           git config user.name "github-actions[bot]"
