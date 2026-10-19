@@ -22,7 +22,8 @@ import {
   Camera,
   Barcode as BarcodeIcon,
   X,
-  ChevronUp
+  ChevronUp,
+  Globe
 } from 'lucide-react';
 import { SizeSelectorModal } from '../components/SizeSelectorModal';
 import { ReceiptModal } from '../components/ReceiptModal';
@@ -30,6 +31,7 @@ import { BillingModal } from '../components/BillingModal';
 import { OrderHistoryModal } from '../components/OrderHistoryModal';
 import { ParkedOrdersModal } from '../components/ParkedOrdersModal';
 import { DayRegisterModal } from '../components/DayRegisterModal';
+import { OnlineOrdersModal } from '../components/OnlineOrdersModal';
 import { BarcodeScannerModal } from '../../../shared/components/BarcodeScannerModal';
 import { hardwareService } from '../../../core/hardware/hardwareService';
 import { useKeyboardShortcuts } from '../../../core/hardware/useKeyboardShortcuts';
@@ -82,6 +84,8 @@ export function PosPage() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [isOnlineOrdersModalOpen, setIsOnlineOrdersModalOpen] = useState(false);
+  const [onlineOrderCount, setOnlineOrderCount] = useState(0);
 
   // Reprints
   const [orderForReprint, setOrderForReprint] = useState<{ order: Order; tab: 'receipt' | 'kot' } | null>(null);
@@ -93,6 +97,21 @@ export function PosPage() {
   useEffect(() => {
     loadProducts();
     loadOrdersHistory();
+
+    const fetchLiveCount = () => {
+      fetch('/api/orders/live')
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.count === 'number') {
+            setOnlineOrderCount(data.count);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchLiveCount();
+    const interval = setInterval(fetchLiveCount, 8000);
+    return () => clearInterval(interval);
   }, [loadProducts, loadOrdersHistory]);
 
   // Only display active, sellable items (filters out deactivated Momo, Macaroni, Stir Fry, Beverages, and sub-items)
@@ -515,6 +534,25 @@ export function PosPage() {
 
               <button
                 type="button"
+                onClick={() => setIsOnlineOrdersModalOpen(true)}
+                className={`px-2.5 py-1.5 rounded-xl border text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer relative ${
+                  onlineOrderCount > 0 
+                    ? 'border-[#800000] bg-[#fee8eb] text-[#800000] animate-pulse ring-2 ring-[#800000]/20' 
+                    : 'border-[#ebd5da] bg-[#fdf5f6] hover:bg-[#fee8eb] text-[#800000]'
+                }`}
+                title="View Online, Table QR, and Kiosk incoming orders"
+              >
+                <Globe className="w-4 h-4 text-[#800000]" />
+                <span className="hidden sm:inline">Online/Kiosk</span>
+                {onlineOrderCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-[#800000] text-white text-[10px] font-black flex items-center justify-center">
+                    {onlineOrderCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsHistoryModalOpen(true)}
                 className="px-2.5 py-1.5 rounded-xl border border-[#ebd5da] bg-[#fdf5f6] hover:bg-[#fee8eb] text-[#800000] text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
               >
@@ -829,6 +867,17 @@ export function PosPage() {
             }
           }}
           onClose={() => setIsBarcodeModalOpen(false)}
+        />
+      )}
+
+      {isOnlineOrdersModalOpen && (
+        <OnlineOrdersModal
+          isOpen={isOnlineOrdersModalOpen}
+          onClose={() => setIsOnlineOrdersModalOpen(false)}
+          onSelectOrderForPrint={(order, tab) => {
+            setOrderForReprint({ order, tab });
+            setIsOnlineOrdersModalOpen(false);
+          }}
         />
       )}
     </div>

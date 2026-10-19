@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useTableStore } from '../store/tableStore';
-import { Plus, Users, Calendar, ListTodo, Armchair, X } from 'lucide-react';
+import { Plus, Users, Calendar, ListTodo, Armchair, X, QrCode } from 'lucide-react';
 import { Table, TableStatus } from '../models/table';
 import { ReservationList } from '../components/ReservationList';
 import { WaitlistList } from '../components/WaitlistList';
+import { TableQrModal } from '../components/TableQrModal';
 
 type SidebarView = 'NONE' | 'RESERVATIONS' | 'WAITLIST';
 
@@ -11,6 +12,8 @@ export function TableManagementPage() {
   const { floors, tables, loadData, updateTableStatus, updateTablePosition } = useTableStore();
   const [activeFloorId, setActiveFloorId] = useState<string>('');
   const [sidebarView, setSidebarView] = useState<SidebarView>('NONE');
+  const [selectedQrTable, setSelectedQrTable] = useState<Table | null>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -67,6 +70,15 @@ export function TableManagementPage() {
           <p className="text-slate-500 dark:text-slate-400">Manage floors, tables, and reservations</p>
         </div>
         <div className="flex space-x-3">
+          <button 
+            onClick={() => {
+              setSelectedQrTable(activeTables[0] || null);
+              setIsQrModalOpen(true);
+            }}
+            className="px-4 py-2 rounded-md flex items-center transition-colors shadow-sm text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            <QrCode className="w-4 h-4 mr-2" /> QR Table Stands
+          </button>
           <button 
             onClick={() => setSidebarView(sidebarView === 'WAITLIST' ? 'NONE' : 'WAITLIST')}
             className={`px-4 py-2 rounded-md flex items-center transition-colors shadow-sm text-sm font-medium ${
@@ -125,7 +137,7 @@ export function TableManagementPage() {
                   key={table.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, table.id)}
-                  className={`absolute cursor-move border-2 shadow-sm flex flex-col items-center justify-center transition-colors user-select-none hover:shadow-md ${getStatusColor(table.status)}`}
+                  className={`group absolute cursor-move border-2 shadow-sm flex flex-col items-center justify-center transition-colors user-select-none hover:shadow-md ${getStatusColor(table.status)}`}
                   style={{
                     left: table.positionX,
                     top: table.positionY,
@@ -143,6 +155,19 @@ export function TableManagementPage() {
                   <div className="flex items-center text-xs opacity-80 mt-1 font-medium">
                     <Users className="w-3 h-3 mr-1" /> {table.capacity}
                   </div>
+                  {/* Quick QR button on hover */}
+                  <button
+                    type="button"
+                    title="View & Print Table QR Code"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedQrTable(table);
+                      setIsQrModalOpen(true);
+                    }}
+                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 bg-white/90 dark:bg-slate-900/90 text-indigo-600 rounded-md shadow-xs hover:scale-110 transition-all"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -185,6 +210,15 @@ export function TableManagementPage() {
           </div>
         )}
       </div>
+
+      {/* Table QR Stand Generator Modal */}
+      <TableQrModal 
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        table={selectedQrTable}
+        floor={floors.find(f => f.id === activeFloorId)}
+        allTables={activeTables}
+      />
     </div>
   );
 }

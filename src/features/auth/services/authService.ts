@@ -15,6 +15,9 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../../core/firebase/firebaseConfig';
 import { logger } from '../../../core/logging/logger';
 
+export const SUPER_ADMIN_UIDS = ['DeQd1Y2YWjQt0eFjQ4iWPThuBAJ3'];
+export const SUPER_ADMIN_EMAILS = ['talkofthetown312@gmail.com'];
+
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -98,36 +101,105 @@ class AuthService {
   private async createUserProfile(user: User, displayName: string): Promise<void> {
     if (!db) return;
     
+    const isSuperAdmin = SUPER_ADMIN_UIDS.includes(user.uid) || 
+      (user.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
+
     const profile: UserProfile = {
       uid: user.uid,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      displayName,
-      roles: ['CASHIER'], // Default role, should be updated by admin
-      permissions: ['pos.order.create'],
-      branches: [], // Needs to be assigned
+      displayName: displayName || (isSuperAdmin ? 'Talk of the Town (Owner)' : 'User'),
+      roles: isSuperAdmin ? ['OWNER', 'ADMIN', 'MANAGER'] : ['CASHIER'],
+      permissions: isSuperAdmin ? ['*'] : ['pos.order.create'],
+      branches: ['br_main'],
       createdAt: new Date().toISOString()
     };
 
-    await setDoc(doc(db, 'users', user.uid), profile);
-    logger.info('Created user profile', { uid: user.uid });
+    try {
+      await setDoc(doc(db, 'users', user.uid), profile);
+      logger.info('Created user profile', { uid: user.uid });
+    } catch (err) {
+      logger.warn('Failed to save profile in Firestore', err);
+    }
   }
 
   async getUserProfile(uid: string): Promise<UserProfile | null> {
-    if (!db) return null;
+    const isSuperAdmin = SUPER_ADMIN_UIDS.includes(uid);
+    if (!db) {
+      if (isSuperAdmin) {
+        return {
+          uid,
+          email: 'talkofthetown312@gmail.com',
+          phoneNumber: null,
+          displayName: 'Talk of the Town (Owner)',
+          roles: ['OWNER', 'ADMIN', 'MANAGER'],
+          permissions: ['*'],
+          branches: ['br_main'],
+          createdAt: new Date().toISOString()
+        };
+      }
+      return null;
+    }
     
     try {
       const docRef = doc(db, 'users', uid);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        return docSnap.data() as UserProfile;
+        const data = docSnap.data() as UserProfile;
+        if (isSuperAdmin && (!data.roles.includes('OWNER') || !data.roles.includes('ADMIN'))) {
+          data.roles = Array.from(new Set([...data.roles, 'OWNER', 'ADMIN', 'MANAGER']));
+          data.permissions = ['*'];
+          try {
+            await setDoc(docRef, data, { merge: true });
+          } catch (e) {
+            logger.warn('Could not update superadmin roles on profile', e);
+          }
+        }
+        return data;
+      }
+
+      if (isSuperAdmin) {
+        const ownerProfile: UserProfile = {
+          uid,
+          email: 'talkofthetown312@gmail.com',
+          phoneNumber: null,
+          displayName: 'Talk of the Town (Owner)',
+          roles: ['OWNER', 'ADMIN', 'MANAGER'],
+          permissions: ['*'],
+          branches: ['br_main'],
+          createdAt: new Date().toISOString()
+        };
+        try {
+          await setDoc(docRef, ownerProfile);
+        } catch (e) {
+          logger.warn('Could not persist superadmin profile to Firestore', e);
+        }
+        return ownerProfile;
       }
     } catch (error) {
       logger.warn('Could not fetch user profile from Firestore', error);
+      if (isSuperAdmin) {
+        return {
+          uid,
+          email: 'talkofthetown312@gmail.com',
+          phoneNumber: null,
+          displayName: 'Talk of the Town (Owner)',
+          roles: ['OWNER', 'ADMIN', 'MANAGER'],
+          permissions: ['*'],
+          branches: ['br_main'],
+          createdAt: new Date().toISOString()
+        };
+      }
     }
     
     return null;
+  }
+
+  async updateUserProfile(profile: Partial<UserProfile> & { uid: string }): Promise<void> {
+    if (!db) return;
+    const docRef = doc(db, 'users', profile.uid);
+    await setDoc(docRef, profile, { merge: true });
   }
 }
 

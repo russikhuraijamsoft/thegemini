@@ -1,5 +1,5 @@
 import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../../core/firebase/firebaseConfig';
+import { db, auth } from '../../../core/firebase/firebaseConfig';
 import { Product, Order, MenuItemSize } from '../models/pos';
 import { INITIAL_MENU_ITEMS, getAllMenuItemSizes } from '../data/menuData';
 
@@ -7,34 +7,51 @@ class PosService {
   private hasInitializedMenu = false;
 
   async getProducts(): Promise<Product[]> {
-    if (!db) {
-      return INITIAL_MENU_ITEMS;
-    }
-
+    // 1. Prioritize authoritative backend API (cross-platform, zero 403 errors, consistent across Android, iOS, Desktop & Web)
     try {
-      const q = query(collection(db, 'pos_products'));
-      const snapshot = await getDocs(q);
-
-      // If empty or missing updated menu items, seed/sync them
-      if (snapshot.empty || !this.hasInitializedMenu) {
-        await this.syncInitialMenu(snapshot.empty);
-        this.hasInitializedMenu = true;
-        const updatedSnap = await getDocs(q);
-        if (!updatedSnap.empty) {
-          return updatedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.products && Array.isArray(data.products) && data.products.length > 0) {
+          return data.products;
         }
       }
-
-      const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      return products.length > 0 ? products : INITIAL_MENU_ITEMS;
-    } catch (error) {
-      console.warn("Falling back to local menu items due to Firestore fetch error:", error);
-      return INITIAL_MENU_ITEMS;
+    } catch {
+      // Offline fallback
     }
+
+    // 2. Query Firestore if available
+    if (db) {
+      try {
+        const q = query(collection(db, 'pos_products'));
+        const snapshot = await getDocs(q);
+
+        // ONLY seed/sync to Firestore if a staff user is logged in (prevents 403 Forbidden in guest kiosk mode)
+        if (auth.currentUser && (snapshot.empty || !this.hasInitializedMenu)) {
+          await this.syncInitialMenu(snapshot.empty);
+          this.hasInitializedMenu = true;
+          const updatedSnap = await getDocs(q);
+          if (!updatedSnap.empty) {
+            return updatedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+          }
+        }
+
+        if (!snapshot.empty) {
+          const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+          if (products.length > 0) return products;
+        }
+      } catch (error) {
+        console.warn("Firestore fetch error, falling back to local menu items:", error);
+      }
+    }
+
+    // 3. Fallback to comprehensive built-in menu items
+    return INITIAL_MENU_ITEMS.filter(p => p.active !== false && p.isAvailable !== false && !p.isSubItem);
   }
 
   async syncInitialMenu(isCollectionEmpty = false): Promise<void> {
-    if (!db) return;
+    // Never attempt Firestore write if no db or if user is unauthenticated (prevents 403)
+    if (!db || !auth.currentUser) return;
 
     try {
       // Upsert products to pos_products
@@ -54,20 +71,32 @@ class PosService {
   }
 
   async getMenuItemSizes(itemId?: string): Promise<MenuItemSize[]> {
-    if (!db) {
-      const sizes = getAllMenuItemSizes();
-      return itemId ? sizes.filter(s => s.item_id === itemId) : sizes;
+    // 1. Check API endpoint
+    try {
+      const res = await fetch('/api/products/sizes');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.sizes && Array.isArray(data.sizes)) {
+          return itemId ? data.sizes.filter((s: MenuItemSize) => s.item_id === itemId) : data.sizes;
+        }
+      }
+    } catch {}
+
+    // 2. Query Firestore if available
+    if (db) {
+      try {
+        const q = query(collection(db, 'menu_item_sizes'));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const sizes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItemSize));
+          return itemId ? sizes.filter(s => s.item_id === itemId) : sizes;
+        }
+      } catch {}
     }
 
-    try {
-      const q = query(collection(db, 'menu_item_sizes'));
-      const snapshot = await getDocs(q);
-      const sizes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItemSize));
-      return itemId ? sizes.filter(s => s.item_id === itemId) : sizes;
-    } catch {
-      const sizes = getAllMenuItemSizes();
-      return itemId ? sizes.filter(s => s.item_id === itemId) : sizes;
-    }
+    // 3. Fallback
+    const sizes = getAllMenuItemSizes();
+    return itemId ? sizes.filter(s => s.item_id === itemId) : sizes;
   }
 
   async addProduct(productData: Omit<Product, 'id'>): Promise<Product> {

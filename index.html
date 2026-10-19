@@ -1,6 +1,107 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      // Gracefully handle Vite HMR WebSocket in AI Studio iframe environment where HMR is disabled
+      (function() {
+        // Suppress WebSocket errors from bubbling
+        window.addEventListener('error', function(e) {
+          if (e && e.message && (e.message.includes('WebSocket') || e.message.includes('vite:ws'))) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(e) {
+          if (e && e.reason) {
+            var msg = e.reason.message || String(e.reason);
+            if (msg.includes('WebSocket') || msg.includes('vite:ws')) {
+              e.stopImmediatePropagation();
+              e.preventDefault();
+            }
+          }
+        }, true);
+
+        // Filter out Vite WebSocket closed connection errors from console.error
+        var origConsoleError = console.error;
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var fullMsg = args.map(function(a) {
+            return (a && typeof a === 'object' && a.message) ? a.message : String(a);
+          }).join(' ');
+          if (
+            fullMsg.includes('WebSocket closed without opened') || 
+            fullMsg.includes('failed to connect to websocket') ||
+            fullMsg.includes('vite:ws')
+          ) {
+            return;
+          }
+          origConsoleError.apply(console, arguments);
+        };
+
+        // Mock WebSocket for Vite HMR to prevent connection closure failures
+        var OriginalWebSocket = window.WebSocket;
+        if (OriginalWebSocket) {
+          function MockViteWebSocket(url, protocols) {
+            var isVite = protocols === 'vite-hmr' || (typeof url === 'string' && (url.includes('token=') || url.includes('vite')));
+            if (isVite) {
+              var target = new EventTarget();
+              var mockWs = {
+                readyState: 0, // CONNECTING
+                CONNECTING: 0,
+                OPEN: 1,
+                CLOSING: 2,
+                CLOSED: 3,
+                url: url,
+                protocol: 'vite-hmr',
+                extensions: '',
+                binaryType: 'blob',
+                bufferedAmount: 0,
+                send: function() {},
+                close: function() {
+                  mockWs.readyState = 3;
+                  target.dispatchEvent(new Event('close'));
+                },
+                addEventListener: function(type, listener, options) {
+                  target.addEventListener(type, listener, options);
+                },
+                removeEventListener: function(type, listener, options) {
+                  target.removeEventListener(type, listener, options);
+                },
+                dispatchEvent: function(event) {
+                  return target.dispatchEvent(event);
+                }
+              };
+
+              ['open', 'message', 'error', 'close'].forEach(function(evt) {
+                Object.defineProperty(mockWs, 'on' + evt, {
+                  get: function() { return this['_on' + evt] || null; },
+                  set: function(fn) {
+                    if (this['_on' + evt]) target.removeEventListener(evt, this['_on' + evt]);
+                    this['_on' + evt] = fn;
+                    if (fn) target.addEventListener(evt, fn);
+                  }
+                });
+              });
+
+              setTimeout(function() {
+                mockWs.readyState = 1; // OPEN
+                target.dispatchEvent(new Event('open'));
+              }, 10);
+
+              return mockWs;
+            }
+            return new OriginalWebSocket(url, protocols);
+          }
+          MockViteWebSocket.prototype = OriginalWebSocket.prototype;
+          MockViteWebSocket.CONNECTING = 0;
+          MockViteWebSocket.OPEN = 1;
+          MockViteWebSocket.CLOSING = 2;
+          MockViteWebSocket.CLOSED = 3;
+          window.WebSocket = MockViteWebSocket;
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>TalkOS Architecture</title>

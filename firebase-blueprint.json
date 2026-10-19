@@ -61,9 +61,28 @@
         "createdAt": { "type": "string" }
       },
       "required": ["id", "orderId", "orderNumber", "status"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with roles and permissions",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "roles": { "type": "array", "items": { "type": "string" } },
+        "permissions": { "type": "array", "items": { "type": "string" } },
+        "branches": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "roles", "permissions"]
     }
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User accounts and role permissions"
+    },
     "/pos_products/{productId}": {
       "schema": "Product",
       "description": "Active and archived menu items"

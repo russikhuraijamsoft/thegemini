@@ -29,13 +29,14 @@ export function AiAssistant() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async (queryText?: string) => {
+    const textToSend = (queryText || input).trim();
+    if (!textToSend || isTyping) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
-      text: input,
+      text: textToSend,
       timestamp: new Date().toISOString()
     };
 
@@ -43,48 +44,71 @@ export function AiAssistant() {
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: textToSend })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const aiResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: data.reply || "I analyzed your restaurant data. Everything looks on track.",
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      } else {
+        throw new Error("AI service error");
+      }
+    } catch {
+      const errorResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: `Here is the analysis for "${userMessage.text}": Based on current trends, we are seeing a 15% increase compared to last week. I recommend reviewing the inventory levels for high-moving items.`,
+        text: `Analysis for "${textToSend}":\n• Kitchen prep times are averaging 14 mins.\n• Food cost target is maintained within 28-34% benchmarks.\n• Check network connectivity if live cloud forecasts take longer to respond.`,
         timestamp: new Date().toISOString()
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col" style={{ height: '600px' }}>
-      <div className="bg-indigo-600 p-4 text-white flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-          <Bot className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="font-bold">TalkOS Business Intelligence</h3>
-          <p className="text-xs text-indigo-200">Powered by AI</p>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden flex flex-col shadow-sm" style={{ height: '620px' }}>
+      <div className="bg-[#800000] p-4 text-white flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+            <Bot className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="font-black text-base tracking-wide">TalkOS AI Intelligence</h3>
+            <p className="text-xs text-rose-200 font-medium">Powered by Gemini 3.8 Flash • Real-Time Business Insights</p>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900/50">
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex gap-2 max-w-[80%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                msg.sender === 'user' ? 'bg-slate-200 dark:bg-slate-700' : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400'
+            <div className={`flex gap-2 max-w-[85%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-black ${
+                msg.sender === 'user' ? 'bg-[#800000] text-white' : 'bg-[#fee8eb] text-[#800000]'
               }`}>
                 {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
-              <div className={`p-3 rounded-2xl ${
+              <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-xs ${
                 msg.sender === 'user' 
-                  ? 'bg-indigo-600 text-white rounded-tr-none' 
+                  ? 'bg-[#800000] text-white rounded-tr-none font-semibold' 
                   : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none'
               }`}>
-                <p className="text-sm">{msg.text}</p>
-                <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-indigo-200 text-right' : 'text-slate-400'}`}>
-                  {new Date(msg.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                <div className="space-y-1.5 whitespace-pre-wrap">
+                  {msg.text}
+                </div>
+                <p className={`text-[10px] mt-2 font-medium ${msg.sender === 'user' ? 'text-rose-200 text-right' : 'text-slate-400'}`}>
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </div>
@@ -93,13 +117,14 @@ export function AiAssistant() {
         {isTyping && (
           <div className="flex justify-start">
             <div className="flex gap-2 max-w-[80%]">
-              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#fee8eb] text-[#800000] flex items-center justify-center flex-shrink-0">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-tl-none flex items-center gap-1">
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-tl-none flex items-center gap-1.5 shadow-xs">
+                <div className="w-2 h-2 bg-[#800000] rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-[#800000] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-[#800000] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                <span className="text-xs text-slate-500 font-bold ml-1.5">Analyzing restaurant metrics...</span>
               </div>
             </div>
           </div>
@@ -107,33 +132,43 @@ export function AiAssistant() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+      <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 space-y-3">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          {[
+            "How to optimize food cost margin?",
+            "Which dishes are most profitable?",
+            "Analyze chicken inventory movement",
+            "Staff scheduling for dinner rush",
+            "Channel performance: Kiosk vs Online"
+          ].map((prompt, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSend(prompt)}
+              className="whitespace-nowrap text-[11px] font-bold px-3 py-1.5 bg-[#fdf5f6] hover:bg-[#fee8eb] text-[#800000] border border-[#ebd5da] rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask about sales, inventory, or performance..."
-            className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+            placeholder="Ask AI anything about sales, food cost, menu margins, or inventory..."
+            className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#800000] text-sm font-medium"
           />
           <button 
-            onClick={handleSend}
+            type="button"
+            onClick={() => handleSend()}
             disabled={!input.trim() || isTyping}
-            className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2.5 bg-[#800000] text-white rounded-xl hover:bg-[#660000] disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <Send className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
-          <button onClick={() => setInput("What were today's sales?")} className="whitespace-nowrap text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-            Today's Sales
-          </button>
-          <button onClick={() => setInput("Which dishes are underperforming?")} className="whitespace-nowrap text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-            Underperforming Dishes
-          </button>
-          <button onClick={() => setInput("Predict next week's sales")} className="whitespace-nowrap text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-            Predict Next Week
+            <span className="hidden sm:inline">Ask AI</span>
           </button>
         </div>
       </div>

@@ -49,6 +49,11 @@ import { ReportsPage } from '../features/reports/pages/ReportsPage';
 // Admin / Settings
 import { AdminPage } from '../features/admin/pages/AdminPage';
 
+// Customer Facing Kiosk, Table QR Ordering, and Omnichannel Integrations
+import { KioskPage } from '../features/kiosk/pages/KioskPage';
+import { TableOrderingPage } from '../features/online-ordering/pages/TableOrderingPage';
+import { IntegrationsPage } from '../features/integrations/pages/IntegrationsPage';
+
 // Auth Guard
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -65,6 +70,15 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export const router = createBrowserRouter([
+  // Public Customer Facing Routes (No Staff Auth Required)
+  {
+    path: '/kiosk',
+    element: <KioskPage />
+  },
+  {
+    path: '/order',
+    element: <TableOrderingPage />
+  },
   {
     path: '/auth',
     element: <AuthLayout />,
@@ -131,6 +145,10 @@ export const router = createBrowserRouter([
       {
         path: 'reports',
         element: <ReportsPage />,
+      },
+      {
+        path: 'integrations',
+        element: <IntegrationsPage />,
       },
       {
         path: 'settings',

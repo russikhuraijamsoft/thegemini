@@ -36,8 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentUser) {
         try {
           // Fetch user profile from Firestore to get roles, branches, permissions
+          const isOwnerUid = currentUser.uid === 'DeQd1Y2YWjQt0eFjQ4iWPThuBAJ3' || currentUser.email === 'talkofthetown312@gmail.com';
           const userProfile = await authService.getUserProfile(currentUser.uid);
           if (userProfile) {
+            if (isOwnerUid) {
+              userProfile.roles = Array.from(new Set([...userProfile.roles, 'OWNER', 'ADMIN', 'MANAGER']));
+              userProfile.permissions = ['*'];
+            }
             setProfile(userProfile);
             if (userProfile.defaultBranch && !currentBranchId) {
                setBranchId(userProfile.defaultBranch);
@@ -48,10 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               uid: currentUser.uid,
               email: currentUser.email,
               phoneNumber: currentUser.phoneNumber,
-              displayName: currentUser.displayName || 'Authenticated User',
-              roles: ['ADMIN', 'OWNER'],
+              displayName: currentUser.displayName || (isOwnerUid ? 'Talk of the Town (Owner)' : 'Authenticated User'),
+              roles: isOwnerUid ? ['OWNER', 'ADMIN', 'MANAGER'] : ['ADMIN', 'OWNER'],
               permissions: ['*'],
-              branches: [],
+              branches: ['br_main'],
               createdAt: new Date().toISOString()
             });
           }

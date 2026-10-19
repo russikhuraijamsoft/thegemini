@@ -7,7 +7,30 @@ class AdminService {
     if (!db) throw new Error("Firestore is not initialized");
     const q = query(collection(db, 'admin_users'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    
+    // Ensure Super Admin / Owner UID is always registered and visible
+    const ownerId = 'DeQd1Y2YWjQt0eFjQ4iWPThuBAJ3';
+    const hasOwner = users.some(u => u.id === ownerId || u.email === 'talkofthetown312@gmail.com');
+    if (!hasOwner) {
+      const ownerUser: User = {
+        id: ownerId,
+        name: 'Talk of the Town (Owner)',
+        email: 'talkofthetown312@gmail.com',
+        role: 'OWNER',
+        branchIds: ['br_main'],
+        status: 'ACTIVE',
+        lastLogin: new Date().toISOString()
+      };
+      users.unshift(ownerUser);
+      // Persist to admin_users collection if possible
+      try {
+        await setDoc(doc(db, 'admin_users', ownerId), ownerUser, { merge: true });
+      } catch (err) {
+        // Ignored if offline or unauthenticated
+      }
+    }
+    return users;
   }
 
   async getBranches(): Promise<Branch[]> {
@@ -42,11 +65,11 @@ class AdminService {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
   }
 
-  async addUser(userData: Omit<User, 'id'>): Promise<User> {
+  async addUser(userData: Omit<User, 'id'> & { id?: string }): Promise<User> {
     if (!db) throw new Error("Firestore is not initialized");
     const newUser: User = {
       ...userData,
-      id: `usr_${Date.now()}`
+      id: userData.id?.trim() || `usr_${Date.now()}`
     };
     await setDoc(doc(db, 'admin_users', newUser.id), newUser);
     return newUser;

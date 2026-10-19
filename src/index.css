@@ -94,3 +94,21 @@ body {
   background: #800000;
 }
 
+/* Print Optimization for Table QR Stand Cards & Receipts */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-tent-cards, .printable-tent-cards * {
+    visibility: visible;
+  }
+  .printable-tent-cards {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+}
+

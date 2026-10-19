@@ -2,7 +2,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingCart, ChefHat, Package, Users, Settings, 
-  CreditCard, CalendarClock, Truck, Sparkles, FileBarChart, Armchair, Factory
+  CreditCard, CalendarClock, Truck, Sparkles, FileBarChart, Armchair, Factory,
+  Globe, Monitor, QrCode
 } from 'lucide-react';
 import { useAuth } from '../../core/auth/AuthContext';
 
@@ -26,6 +27,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Finance', to: '/finance', icon: CreditCard, roles: ['OWNER', 'ADMIN', 'ACCOUNTANT'] },
     { name: 'HR & Payroll', to: '/hr', icon: CalendarClock, roles: ['OWNER', 'ADMIN', 'HR', 'MANAGER'] },
     { name: 'Reports & Analytics', to: '/reports', icon: FileBarChart, roles: ['OWNER', 'ADMIN', 'MANAGER', 'ACCOUNTANT'] },
+    { name: 'Omnichannel & Delivery', to: '/integrations', icon: Globe, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
     { name: 'AI Assistant', to: '/ai', icon: Sparkles, roles: ['OWNER', 'ADMIN'] },
     { name: 'Settings', to: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
   ];
@@ -86,11 +88,32 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-[#ebd5da]">
-          <div className="bg-[#fdf5f6] border border-[#ebd5da] rounded-xl p-3.5">
-            <h4 className="text-[11px] font-bold text-[#800000]/80 uppercase tracking-wider mb-1">Branch</h4>
+        <div className="p-3 border-t border-[#ebd5da] space-y-2">
+          <div className="grid grid-cols-2 gap-1.5">
+            <a
+              href="/kiosk"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-[#fdf5f6] hover:bg-[#ebd5da] text-[#800000] text-[11px] font-bold transition-colors"
+              title="Launch Customer Kiosk Terminal"
+            >
+              <Monitor className="w-3.5 h-3.5" /> Kiosk
+            </a>
+            <a
+              href="/order?table=T1"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-[#fdf5f6] hover:bg-[#ebd5da] text-[#800000] text-[11px] font-bold transition-colors"
+              title="Launch Table QR Ordering"
+            >
+              <QrCode className="w-3.5 h-3.5" /> Table QR
+            </a>
+          </div>
+
+          <div className="bg-[#fdf5f6] border border-[#ebd5da] rounded-xl p-3">
+            <h4 className="text-[11px] font-bold text-[#800000]/80 uppercase tracking-wider mb-0.5">Branch</h4>
             <p className="text-sm font-bold text-[#800000] truncate">Main Downtown</p>
-            <p className="text-xs text-[#800000]/70 mt-0.5">Terminal 01</p>
+            <p className="text-xs text-[#800000]/70">Terminal 01</p>
           </div>
         </div>
       </aside>

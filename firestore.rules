@@ -6,23 +6,29 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function isSuperAdminUid() {
+      return request.auth.uid == 'DeQd1Y2YWjQt0eFjQ4iWPThuBAJ3';
+    }
     
     function hasRole(role) {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             role in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
+      return isAuthenticated() && (
+        isSuperAdminUid() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         role in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles)
+      );
     }
     
     function isOwner() {
-      return hasRole('OWNER');
+      return isSuperAdminUid() || hasRole('OWNER');
     }
     
     function isAdmin() {
-      return hasRole('ADMIN') || hasRole('OWNER');
+      return isSuperAdminUid() || hasRole('ADMIN') || hasRole('OWNER');
     }
     
     function isManager() {
-      return hasRole('MANAGER') || isAdmin();
+      return isSuperAdminUid() || hasRole('MANAGER') || isAdmin();
     }
 
     // Users Collection
@@ -31,7 +37,21 @@ service cloud.firestore {
       allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
     }
     
-    // Admin / System Configuration
+    // Admin & Management Collections
+    match /admin_users/{userId} {
+      allow read, write: if isAdmin();
+    }
+    match /admin_branches/{branchId} {
+      allow read, write: if isAdmin();
+    }
+    match /admin_config/{configId} {
+      allow read, write: if isAdmin();
+    }
+    match /admin_audit_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Config Collection
     match /config/{document=**} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
@@ -50,41 +70,155 @@ service cloud.firestore {
 
     // POS / Sales Data
     match /orders/{orderId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Cashiers can create
-      allow update: if isAuthenticated();
-      allow delete: if isAdmin(); // Only admins can delete/void permanently
-    }
-
-    match /pos_orders/{orderId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
+      allow read: if true;
+      allow create: if true;
       allow update: if isAuthenticated();
       allow delete: if isAdmin();
     }
 
-    // KDS / Tickets
+    match /pos_orders/{orderId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // KDS / Tickets & Kitchen Stations
     match /tickets/{ticketId} {
-      allow read, write: if isAuthenticated();
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAuthenticated();
     }
 
     match /stations/{stationId} {
-      allow read, write: if isAuthenticated();
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
     
+    // Table Management
+    match /table_floors/{floorId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    match /table_items/{itemId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    match /table_reservations/{resId} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow update, delete: if isAuthenticated();
+    }
+    match /table_waitlist/{waitId} {
+      allow read: if isAuthenticated();
+      allow create: if true;
+      allow update, delete: if isAuthenticated();
+    }
+
     // Inventory Data
     match /inventory/{itemId} {
       allow read: if isAuthenticated();
       allow write: if isManager();
     }
+    match /inventory_categories/{catId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /inventory_warehouses/{whId} {
+      allow read, write: if isManager();
+    }
+    match /inventory_storage_locations/{locId} {
+      allow read, write: if isManager();
+    }
+    match /inventory_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isManager();
+    }
+    match /inventory_batches/{batchId} {
+      allow read, write: if isManager();
+    }
+    match /inventory_cycle_counts/{countId} {
+      allow read, write: if isManager();
+    }
     
+    // Manufacturing & Recipes
+    match /recipes/{recipeId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /manufacturing_orders/{orderId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Purchasing & Suppliers
+    match /suppliers/{supplierId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /purchase_orders/{orderId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // CRM & Loyalty
+    match /customers/{customerId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /promotions/{promoId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Reports & Analytics
+    match /reports_metrics/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /reports_sales_trend/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /reports_expense_breakdown/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // AI Insights & Forecasts
+    match /ai_insights/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_alerts/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_forecasts/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
     // HR & Finance Data
     match /hr/{document=**} {
+      allow read, write: if isAdmin() || hasRole('HR');
+    }
+    match /hr_employees/{id} {
+      allow read, write: if isAdmin() || hasRole('HR');
+    }
+    match /hr_attendance/{id} {
+      allow read, write: if isAdmin() || hasRole('HR');
+    }
+    match /hr_leaves/{id} {
+      allow read, write: if isAdmin() || hasRole('HR');
+    }
+    match /hr_payroll/{id} {
       allow read, write: if isAdmin() || hasRole('HR');
     }
     
     match /finance/{document=**} {
       allow read, write: if isAdmin() || hasRole('ACCOUNTANT');
+    }
+    match /finance_accounts/{id} {
+      allow read, write: if isAdmin() || hasRole('ACCOUNTANT');
+    }
+    match /finance_transactions/{id} {
+      allow read, write: if isAdmin() || hasRole('ACCOUNTANT');
+    }
+
+    // System Connection Health Check
+    match /system/{document=**} {
+      allow read, write: if true;
     }
     
     // Default Deny

@@ -11,9 +11,11 @@ interface AdminState {
   error: string | null;
 
   loadAdminData: () => Promise<void>;
+  addUser: (userData: Omit<User, 'id'> & { id?: string }) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
 }
 
-export const useAdminStore = create<AdminState>((set) => ({
+export const useAdminStore = create<AdminState>((set, get) => ({
   users: [],
   branches: [],
   config: null,
@@ -33,6 +35,28 @@ export const useAdminStore = create<AdminState>((set) => ({
       set({ users, branches, config, logs, loading: false });
     } catch (e: any) {
       set({ error: e.message, loading: false });
+    }
+  },
+
+  addUser: async (userData) => {
+    set({ loading: true, error: null });
+    try {
+      const newUser = await adminService.addUser(userData);
+      set({ users: [newUser, ...get().users], loading: false });
+    } catch (e: any) {
+      set({ error: e.message, loading: false });
+      throw e;
+    }
+  },
+
+  deleteUser: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      await adminService.deleteUser(id);
+      set({ users: get().users.filter(u => u.id !== id), loading: false });
+    } catch (e: any) {
+      set({ error: e.message, loading: false });
+      throw e;
     }
   }
 }));

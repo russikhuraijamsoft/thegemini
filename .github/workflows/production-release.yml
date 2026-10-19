@@ -1,12 +1,15 @@
-name: TalkOS Production Release
+name: TalkOS Multi-Platform Production Release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy-web:
+  # 1. Web & PWA Build and Deploy
+  release-web:
+    name: Build Web & PWA
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -21,8 +24,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Type Check & Lint
-        run: npm run lint
+      - name: Run Tests
+        run: npm run test
 
       - name: Build Web Application
         run: npm run build
@@ -32,25 +35,70 @@ jobs:
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           NODE_ENV: production
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Archive Web Build Artifact
+        uses: actions/upload-artifact@v4
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: live
-          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          name: talkos-web-pwa
+          path: dist/
 
-  build-android:
+  # 2. Desktop Matrix Builds (Windows, macOS, Linux)
+  release-desktop:
+    name: Build Desktop (${{ matrix.os }})
+    needs: [release-web]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            artifact_name: talkos-windows-desktop
+          - os: macos-latest
+            artifact_name: talkos-macos-desktop
+          - os: ubuntu-latest
+            artifact_name: talkos-linux-desktop
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Compile Electron Desktop Bundle
+        run: npm run build:electron
+
+      - name: Archive Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist-electron/
+
+  # 3. Mobile Build Pipeline (Android & iOS Sync via Capacitor)
+  release-mobile-sync:
+    name: Sync Capacitor Mobile Native Shells
+    needs: [release-web]
     runs-on: ubuntu-latest
     steps:
-      - name: Android Build Notice
-        run: |
-          echo "TalkOS uses a Web POS stack (React/Vite). Mobile wrappers (Capacitor/React Native) or separate Flutter repositories will use this step."
-          echo "Placeholder for APK/AAB generation."
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - name: iOS Build Notice
-        run: |
-          echo "TalkOS uses a Web POS stack (React/Vite). iOS App Store builds via Capacitor require Xcode build steps here."
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Web Assets for Capacitor
+        run: npm run build
+
+      - name: Capacitor Sync
+        run: npx cap sync
