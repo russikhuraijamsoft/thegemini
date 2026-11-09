@@ -4,6 +4,14 @@ import '../../pos/presentation/pos_screen.dart';
 
 enum _Section { overview, pos, kitchen, inventory, more }
 
+const _navigationItems = <({ _Section id, String label, IconData icon })>[
+  (id: _Section.overview, label: 'Overview', icon: Icons.dashboard_outlined),
+  (id: _Section.pos, label: 'Point of Sale', icon: Icons.point_of_sale_outlined),
+  (id: _Section.kitchen, label: 'Kitchen', icon: Icons.soup_kitchen_outlined),
+  (id: _Section.inventory, label: 'Inventory', icon: Icons.inventory_2_outlined),
+  (id: _Section.more, label: 'More modules', icon: Icons.apps_outlined),
+];
+
 class TalkOsShell extends StatefulWidget {
   const TalkOsShell({super.key});
 
@@ -14,20 +22,12 @@ class TalkOsShell extends StatefulWidget {
 class _TalkOsShellState extends State<TalkOsShell> {
   _Section _section = _Section.overview;
 
-  static const _items = <({ _Section id, String label, IconData icon })>[
-    (id: _Section.overview, label: 'Overview', icon: Icons.dashboard_outlined),
-    (id: _Section.pos, label: 'Point of Sale', icon: Icons.point_of_sale_outlined),
-    (id: _Section.kitchen, label: 'Kitchen', icon: Icons.soup_kitchen_outlined),
-    (id: _Section.inventory, label: 'Inventory', icon: Icons.inventory_2_outlined),
-    (id: _Section.more, label: 'More modules', icon: Icons.apps_outlined),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 900;
-        final index = _items.indexWhere((item) => item.id == _section);
+        final index = _navigationItems.indexWhere((item) => item.id == _section);
         final body = _section == _Section.pos
             ? const PosScreen()
             : _SectionLanding(section: _section);
@@ -39,13 +39,13 @@ class _TalkOsShellState extends State<TalkOsShell> {
                 NavigationRail(
                   extended: constraints.maxWidth >= 1180,
                   selectedIndex: index,
-                  onDestinationSelected: (value) => setState(() => _section = _items[value].id),
+                  onDestinationSelected: (value) => setState(() => _section = _navigationItems[value].id),
                   leading: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
-                    child: _BrandMark(compact: true),
+                    child: _BrandMark(compact: constraints.maxWidth < 1180),
                   ),
                   destinations: [
-                    for (final item in _items)
+                    for (final item in _navigationItems)
                       NavigationRailDestination(icon: Icon(item.icon), label: Text(item.label)),
                   ],
                 ),
@@ -71,9 +71,9 @@ class _TalkOsShellState extends State<TalkOsShell> {
           body: body,
           bottomNavigationBar: NavigationBar(
             selectedIndex: index,
-            onDestinationSelected: (value) => setState(() => _section = _items[value].id),
+            onDestinationSelected: (value) => setState(() => _section = _navigationItems[value].id),
             destinations: [
-              for (final item in _items)
+              for (final item in _navigationItems)
                 NavigationDestination(icon: Icon(item.icon), label: item.label),
             ],
           ),
@@ -117,7 +117,7 @@ class _SectionLanding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = _items.firstWhere((item) => item.id == section).label;
+    final title = _navigationItems.firstWhere((item) => item.id == section).label;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
