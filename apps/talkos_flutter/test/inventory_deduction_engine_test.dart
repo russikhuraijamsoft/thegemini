@@ -75,6 +75,33 @@ void main() {
     expect(initial.movements, isEmpty);
   });
 
+
+  test('combines repeated ingredient rows into one ledger movement', () {
+    final initial = InventoryState(
+      onHandMicros: {'noodles': 500000},
+      recipes: {
+        'chicken-chowmein': InventoryRecipe(
+          productId: 'chicken-chowmein',
+          version: 4,
+          ingredients: const [
+            RecipeIngredient(
+              inventoryItemId: 'noodles',
+              quantityMicrosPerServing: 100000,
+            ),
+            RecipeIngredient(
+              inventoryItemId: 'noodles',
+              quantityMicrosPerServing: 50000,
+            ),
+          ],
+        ),
+      },
+    );
+    final result = engine.startCooking(initial, order());
+    expect(result.onHandMicros['noodles'], 350000);
+    expect(result.movements, hasLength(1));
+    expect(result.movements.single.quantityMicros, 150000);
+  });
+
   test('missing recipe blocks cooking instead of silently skipping stock', () {
     final initial = InventoryState(
       onHandMicros: {'noodles': 500000},
