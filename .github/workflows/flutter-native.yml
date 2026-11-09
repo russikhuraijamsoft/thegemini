@@ -96,4 +96,4 @@ jobs:
           name: talkos-apple-builds
           path: |
             apps/talkos_flutter/build/ios/iphoneos/Runner.app
-            apps/talkos_flutter/build/macos/Build/Products/Release/TalkOS.app
+            apps/talkos_flutter/build/macos/Build/Products/Release/Runner.app
