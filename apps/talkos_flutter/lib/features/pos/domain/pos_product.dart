@@ -71,7 +71,10 @@ class PosProduct {
       }
       throw StateError('Selected size is not available for this product.');
     }
-    return active.first;
+    if (active.length > 1) {
+      throw StateError('A size must be selected for this product.');
+    }
+    return active.single;
   }
 
   int priceFor(PosItemSize? size) => variantFor(size)?.pricePaise ?? pricePaise;
