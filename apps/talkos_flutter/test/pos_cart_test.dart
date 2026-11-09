@@ -23,6 +23,10 @@ void main() {
       expect(cart.subtotalPaise, 25000);
     });
 
+    test('requires an explicit choice when a product has multiple sizes', () {
+      expect(() => PosCart.empty().add(noodles), throwsStateError);
+    });
+
     test('keeps different sizes as separate order lines', () {
       final cart = PosCart.empty()
           .add(noodles, size: PosItemSize.small)
@@ -31,8 +35,16 @@ void main() {
       expect(cart.subtotalPaise, 36500);
     });
 
+    test('does not merge order lines with different preparation notes', () {
+      final cart = PosCart.empty()
+          .add(noodles, size: PosItemSize.small, notes: 'No onion')
+          .add(noodles, size: PosItemSize.small, notes: 'Extra spicy');
+      expect(cart.lines, hasLength(2));
+      expect(cart.lines.map((line) => line.notes), containsAll(['No onion', 'Extra spicy']));
+    });
+
     test('removes a line when quantity becomes zero', () {
-      final cart = PosCart.empty().add(noodles);
+      final cart = PosCart.empty().add(noodles, size: PosItemSize.small);
       final cleared = cart.setQuantity(cart.lines.single.id, 0);
       expect(cleared.isEmpty, isTrue);
       expect(cleared.subtotalPaise, 0);
@@ -74,10 +86,14 @@ void main() {
         selectedOptions: const {'base-choice': 'noodles'},
       );
       expect(cart.itemCount, 1);
+      expect(
+        () => PosCart.empty().add(combo, selectedOptions: const {'wrong': 'noodles'}),
+        throwsStateError,
+      );
     });
 
     test('does not allow negative quantities', () {
-      final cart = PosCart.empty().add(noodles);
+      final cart = PosCart.empty().add(noodles, size: PosItemSize.small);
       expect(() => cart.setQuantity(cart.lines.single.id, -1), throwsArgumentError);
     });
   });
