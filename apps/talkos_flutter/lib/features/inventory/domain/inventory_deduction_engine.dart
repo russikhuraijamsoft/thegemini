@@ -143,13 +143,23 @@ class InventoryDeductionEngine {
       if (recipe == null) {
         throw MissingInventoryRecipeException(line.productId);
       }
+      // Consolidate repeated recipe rows for the same stock item before
+      // creating the idempotent movement for this order line.
+      final lineRequirements = <String, int>{};
       for (final ingredient in recipe.ingredients) {
-        final amount = ingredient.quantityMicrosPerServing * line.quantity;
+        lineRequirements.update(
+          ingredient.inventoryItemId,
+          (value) => value + ingredient.quantityMicrosPerServing,
+          ifAbsent: () => ingredient.quantityMicrosPerServing,
+        );
+      }
+      for (final entry in lineRequirements.entries) {
+        final amount = entry.value * line.quantity;
         final movementId =
-            '${order.orderId}/${line.lineId}/${ingredient.inventoryItemId}';
+            '${order.orderId}/${line.lineId}/${entry.key}';
         if (current.appliedMovementIds.contains(movementId)) continue;
         requiredByItem.update(
-          ingredient.inventoryItemId,
+          entry.key,
           (value) => value + amount,
           ifAbsent: () => amount,
         );
@@ -158,7 +168,7 @@ class InventoryDeductionEngine {
           orderId: order.orderId,
           orderLineId: line.lineId,
           productId: line.productId,
-          inventoryItemId: ingredient.inventoryItemId,
+          inventoryItemId: entry.key,
           quantityMicros: amount,
           recipeVersion: recipe.version,
           channel: order.channel,
