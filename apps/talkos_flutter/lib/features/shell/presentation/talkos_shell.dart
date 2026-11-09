@@ -40,8 +40,8 @@ class _TalkOsShellState extends State<TalkOsShell> {
                   extended: constraints.maxWidth >= 1180,
                   selectedIndex: index,
                   onDestinationSelected: (value) => setState(() => _section = _navigationItems[value].id),
-                  leading: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
+                  leading: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     child: _BrandMark(compact: constraints.maxWidth < 1180),
                   ),
                   destinations: [
