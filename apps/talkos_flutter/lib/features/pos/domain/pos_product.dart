@@ -60,8 +60,11 @@ class PosProduct {
   final String? comboDescription;
 
   PosProductVariant? variantFor(PosItemSize? size) {
+    if (variants.isEmpty) return null;
     final active = variants.where((variant) => variant.isActive).toList();
-    if (active.isEmpty) return null;
+    if (active.isEmpty) {
+      throw StateError('No active size is configured for this product.');
+    }
     if (size != null) {
       for (final variant in active) {
         if (variant.size == size) return variant;
