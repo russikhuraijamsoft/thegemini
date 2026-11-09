@@ -55,7 +55,12 @@ class PosCart {
     }
     if (quantity <= 0) throw ArgumentError.value(quantity, 'quantity');
 
-    for (final component in product.comboComponents.where((item) => item.isChoice)) {
+    final choiceComponents = product.comboComponents.where((item) => item.isChoice);
+    final validChoiceIds = choiceComponents.map((item) => item.id).toSet();
+    if (selectedOptions.keys.any((key) => !validChoiceIds.contains(key))) {
+      throw StateError('An unknown combo choice was supplied.');
+    }
+    for (final component in choiceComponents) {
       final selectedId = selectedOptions[component.id];
       final isValid = component.options.any((option) => option.id == selectedId);
       if (!isValid) {
@@ -69,7 +74,9 @@ class PosCart {
     final optionKey = (selectedOptions.keys.toList()..sort())
         .map((key) => '$key=${selectedOptions[key]}')
         .join(',');
-    final lineId = '${product.id}|${resolvedSize?.name ?? 'base'}|$optionKey';
+    // Preparation notes are part of the line identity: "no onion" must not
+    // merge into a normal item and silently overwrite its instructions.
+    final lineId = '${product.id}|${resolvedSize?.name ?? 'base'}|$optionKey|${notes.trim()}';
     final next = Map<String, CartLine>.from(_lines);
     final existing = next[lineId];
     next[lineId] = CartLine(
@@ -79,7 +86,7 @@ class PosCart {
       unitPricePaise: unitPrice,
       size: resolvedSize,
       selectedOptions: Map.unmodifiable(selectedOptions),
-      notes: notes.isEmpty ? (existing?.notes ?? '') : notes,
+      notes: notes.trim(),
     );
     return PosCart._(Map.unmodifiable(next));
   }
