@@ -1,0 +1,38 @@
+name: TalkOS Native Flutter CI
+
+on:
+  push:
+    branches: [main, "feat/flutter-native-foundation"]
+    paths:
+      - "apps/talkos_flutter/**"
+      - ".github/workflows/flutter-native.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/talkos_flutter/**"
+      - ".github/workflows/flutter-native.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/talkos_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create --platforms=android,ios,windows,macos --project-name talkos --org com.talkofthetown .
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: talkos-android-debug-apk
+          path: apps/talkos_flutter/build/app/outputs/flutter-apk/app-debug.apk
