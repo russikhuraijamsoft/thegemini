@@ -18,7 +18,14 @@ void main() {
       ],
     );
     return KitchenState(
-      tickets: {'K-100': KitchenTicket(id: 'K-100', inventoryOrder: order)},
+      branchId: 'br_main',
+      tickets: {
+        'K-100': KitchenTicket(
+          id: 'K-100',
+          branchId: 'br_main',
+          inventoryOrder: order,
+        ),
+      },
       inventory: InventoryState(
         onHandMicros: {'flour': flour},
         recipes: {
@@ -128,7 +135,29 @@ void main() {
     final order = state().tickets['K-100']!.inventoryOrder;
 
     expect(
-      () => KitchenTicket(id: 'different-id', inventoryOrder: order),
+      () => KitchenTicket(
+        id: 'different-id',
+        branchId: 'br_main',
+        inventoryOrder: order,
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('rejects tickets from a different branch', () {
+    final current = state();
+    final foreignTicket = KitchenTicket(
+      id: 'K-100',
+      branchId: 'br_other',
+      inventoryOrder: current.tickets['K-100']!.inventoryOrder,
+    );
+
+    expect(
+      () => KitchenState(
+        branchId: 'br_main',
+        tickets: {'K-100': foreignTicket},
+        inventory: current.inventory,
+      ),
       throwsArgumentError,
     );
   });

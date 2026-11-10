@@ -18,9 +18,11 @@ void main() {
       ],
     );
     return KitchenState(
+      branchId: 'br_main',
       tickets: {
         'K-200': KitchenTicket(
           id: 'K-200',
+          branchId: 'br_main',
           inventoryOrder: order,
           tableLabel: 'Table 4',
           productNames: const {'pancakes': 'Pancakes'},

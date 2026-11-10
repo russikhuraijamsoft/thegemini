@@ -5,11 +5,15 @@ enum KitchenTicketStatus { accepted, cooking, ready, completed, cancelled }
 class KitchenTicket {
   KitchenTicket({
     required this.id,
+    required this.branchId,
     required this.inventoryOrder,
     this.status = KitchenTicketStatus.accepted,
     this.tableLabel,
     Map<String, String> productNames = const {},
   }) : productNames = Map.unmodifiable(productNames) {
+    if (branchId.trim().isEmpty) {
+      throw ArgumentError.value(branchId, 'branchId', 'Branch ID cannot be empty.');
+    }
     if (id != inventoryOrder.orderId) {
       throw ArgumentError.value(
         id,
@@ -20,6 +24,7 @@ class KitchenTicket {
   }
 
   final String id;
+  final String branchId;
   final InventoryCookingOrder inventoryOrder;
   final KitchenTicketStatus status;
   final String? tableLabel;
@@ -27,6 +32,7 @@ class KitchenTicket {
 
   KitchenTicket withStatus(KitchenTicketStatus value) => KitchenTicket(
         id: id,
+        branchId: branchId,
         inventoryOrder: inventoryOrder,
         status: value,
         tableLabel: tableLabel,
@@ -36,14 +42,22 @@ class KitchenTicket {
 
 class KitchenState {
   KitchenState({
+    required this.branchId,
     required Map<String, KitchenTicket> tickets,
     required this.inventory,
   }) : tickets = Map.unmodifiable(tickets) {
+    if (branchId.trim().isEmpty) {
+      throw ArgumentError.value(branchId, 'branchId', 'Branch ID cannot be empty.');
+    }
     if (tickets.entries.any((entry) => entry.key != entry.value.id)) {
       throw ArgumentError('Kitchen tickets must be keyed by their order ID.');
     }
+    if (tickets.values.any((ticket) => ticket.branchId != branchId)) {
+      throw ArgumentError('Kitchen tickets must belong to the state branch.');
+    }
   }
 
+  final String branchId;
   final Map<String, KitchenTicket> tickets;
   final InventoryState inventory;
 }
@@ -82,6 +96,7 @@ class KitchenWorkflow {
         ? inventoryEngine.startCooking(current.inventory, ticket.inventoryOrder)
         : current.inventory;
     return KitchenState(
+      branchId: current.branchId,
       tickets: {
         ...current.tickets,
         orderId: ticket.withStatus(to),
