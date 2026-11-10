@@ -288,7 +288,7 @@ class _CartPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Tax'),
-                const Flexible(
+                Flexible(
                   child: Text('Configured by branch', textAlign: TextAlign.end),
                 ),
               ],
