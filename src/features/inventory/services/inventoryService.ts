@@ -1,5 +1,7 @@
 import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebaseConfig';
+import { useAppStore } from '../../../core/store/appStore';
+import { resolveInventoryBranchId, resolveTransactionBranchId, scopeInventoryItem } from '../utils/branchScope';
 import { InventoryItem, Category, Warehouse, StockTransaction, ItemBatch, StorageLocation, CycleCount } from '../models/inventory';
 
 class InventoryService {
@@ -89,13 +91,14 @@ class InventoryService {
     if (!db) throw new Error("Firestore is not initialized");
     const q = query(collection(db, 'inventory_items'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+    return snapshot.docs.map(doc => scopeInventoryItem({ id: doc.id, ...doc.data() } as InventoryItem));
   }
 
   async addItem(itemData: Omit<InventoryItem, 'id' | 'lastUpdated' | 'createdAt' | 'currentStock'>): Promise<InventoryItem> {
     if (!db) throw new Error("Firestore is not initialized");
     const newItem: InventoryItem = {
       ...itemData,
+      branchId: resolveInventoryBranchId(itemData.branchId ?? useAppStore.getState().branchId),
       id: `inv_${Date.now()}`,
       currentStock: 0,
       lastUpdated: new Date().toISOString(),
@@ -181,7 +184,11 @@ class InventoryService {
         throw new Error("Item does not exist!");
       }
 
-      const itemData = itemDoc.data() as InventoryItem;
+      const itemData = scopeInventoryItem(itemDoc.data() as InventoryItem);
+      newTransaction.branchId = resolveTransactionBranchId(
+        newTransaction.branchId,
+        itemData.branchId,
+      );
       const currentStock = itemData.currentStock || 0;
       let stockChange = 0;
 
