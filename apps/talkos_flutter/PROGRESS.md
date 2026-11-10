@@ -12,8 +12,8 @@ Pull request: #1
 
 ## Current work
 
-The POS screen accepts products from an authorised catalogue caller, with search by product name and category. Checkout stays unavailable until an order service is connected. Regression tests cover catalogue search, variants, cart edits, and phone-sized layout.
+The POS screen accepts products from an authorised catalogue caller, with search by product name and category, size/combo selection, cart edits, and per-line preparation notes. Checkout stays unavailable until an order service is connected. Regression tests cover these interactions and phone-sized layout.
 
 ## Resume point
 
-Start from the latest branch commit. Check Actions for the current POS search milestone before recording it as verified; local Flutter tests are unavailable in this environment.
+Start from the latest branch commit. Check Actions for the latest POS changes before recording them as verified; local Flutter tests are unavailable in this environment.

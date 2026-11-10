@@ -80,6 +80,45 @@ class _PosScreenState extends State<PosScreen> {
     setState(() => _cart = _cart.setQuantity(lineId, quantity));
   }
 
+  Future<void> _editNotes(CartLine line) async {
+    final controller = TextEditingController(text: line.notes);
+    final notes = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Preparation note'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: 'For example, no onion'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Save note'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (notes == null || !mounted) return;
+
+    final nextCart = _cart
+        .remove(line.id)
+        .add(
+          line.product,
+          size: line.size,
+          selectedOptions: line.selectedOptions,
+          quantity: line.quantity,
+          notes: notes,
+        );
+    setState(() => _cart = nextCart);
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -279,11 +318,17 @@ class _CartPanel extends StatelessWidget {
                             Text('${_formatMoney(line.unitPricePaise)} each · ${_formatMoney(line.lineTotalPaise)}'),
                             for (final selection in line.selectedOptions.entries)
                               Text(_optionLabel(line.product, selection.key, selection.value)),
+                            if (line.notes.isNotEmpty) Text('Preparation: ${line.notes}'),
                             Align(
                               alignment: Alignment.centerRight,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  IconButton(
+                                    tooltip: line.notes.isEmpty ? 'Add preparation note' : 'Edit preparation note',
+                                    onPressed: () => _editNotes(line),
+                                    icon: const Icon(Icons.edit_note_outlined),
+                                  ),
                                   IconButton(
                                     tooltip: 'Decrease quantity',
                                     onPressed: () => onSetQuantity(line.id, line.quantity - 1),

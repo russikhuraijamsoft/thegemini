@@ -74,6 +74,25 @@ void main() {
     expect(find.text('Test custard'), findsNothing);
   });
 
+  testWidgets('preparation notes stay on their own cart line', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea])));
+    await tester.tap(find.text('Test tea'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Add preparation note'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'No onion');
+    await tester.tap(find.text('Save note'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preparation: No onion'), findsOneWidget);
+
+    await tester.tap(find.text('Test tea').first);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Edit preparation note'), findsOneWidget);
+    expect(find.byTooltip('Add preparation note'), findsOneWidget);
+    expect(find.text('Preparation: No onion'), findsOneWidget);
+  });
+
   testWidgets('catalogue and cart fit a phone-sized viewport', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
