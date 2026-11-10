@@ -6,8 +6,8 @@ export function resolveInventoryBranchId(branchId?: string | null): string {
 }
 
 /** Treat old, unscoped inventory documents as belonging to the first branch. */
-export function scopeInventoryItem<T extends { branchId?: string | null }>(
-  item: T,
+export function scopeInventoryItem<T extends object>(
+  item: T & { branchId?: string | null },
 ): T & { branchId: string } {
   return { ...item, branchId: resolveInventoryBranchId(item.branchId) };
 }

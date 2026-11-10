@@ -19,7 +19,7 @@ Pull request: #1
 
 ## Current work
 
-Verified branch milestone `ea5453d`: Actions run `42760541249` passed analysis, all 39 Flutter tests, Android APK/AAB, Windows, iOS, and macOS builds. Web inventory branch scoping is now in progress; the latest diff is not yet verified. Firestore inventory reads returned HTTP 403 without authentication, so the count (including the suggested 144) is unknown from this checkout.
+Verified branch milestone `ea5453d`: Actions run `42760541249` passed analysis, all 39 Flutter tests, Android APK/AAB, Windows, iOS, and macOS builds. Web inventory branch scoping is in progress; its first web CI run found a TypeScript generic constraint in the new helper test, now corrected for retry. Firestore inventory reads returned HTTP 403 without authentication, so the count (including the suggested 144) is unknown from this checkout.
 
 The POS screen accepts products from an authorised catalogue caller, with search by name/category ID, category chips, size/combo selection, cart edits, and per-line preparation notes. Category chips filter by the supplied category ID and combine with search. Checkout stays unavailable until an order service is connected. Regression tests cover these interactions and phone-sized layout.
 
