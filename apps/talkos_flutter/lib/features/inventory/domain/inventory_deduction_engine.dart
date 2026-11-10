@@ -123,6 +123,7 @@ class InventoryState {
       );
 
   /// On-hand quantity in integer micro-units; no floating point stock math.
+  final String branchId;
   final Map<String, int> onHandMicros;
   final Map<String, InventoryRecipe> recipes;
   final Set<String> appliedMovementIds;
