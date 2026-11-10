@@ -130,7 +130,11 @@ class _PosScreenState extends State<PosScreen> {
               .toList(),
           onProductTap: _addProduct,
         );
-        final cart = _CartPanel(cart: _cart, onSetQuantity: _setQuantity);
+        final cart = _CartPanel(
+          cart: _cart,
+          onSetQuantity: _setQuantity,
+          onEditNotes: _editNotes,
+        );
         return Padding(
           padding: const EdgeInsets.all(20),
           child: wide
@@ -284,10 +288,15 @@ class _EmptyCatalog extends StatelessWidget {
 }
 
 class _CartPanel extends StatelessWidget {
-  const _CartPanel({required this.cart, required this.onSetQuantity});
+  const _CartPanel({
+    required this.cart,
+    required this.onSetQuantity,
+    required this.onEditNotes,
+  });
 
   final PosCart cart;
   final void Function(String lineId, int quantity) onSetQuantity;
+  final ValueChanged<CartLine> onEditNotes;
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +335,7 @@ class _CartPanel extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     tooltip: line.notes.isEmpty ? 'Add preparation note' : 'Edit preparation note',
-                                    onPressed: () => _editNotes(line),
+                                    onPressed: () => onEditNotes(line),
                                     icon: const Icon(Icons.edit_note_outlined),
                                   ),
                                   IconButton(
