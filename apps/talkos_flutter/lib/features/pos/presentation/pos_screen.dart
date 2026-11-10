@@ -81,30 +81,10 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   Future<void> _editNotes(CartLine line) async {
-    final controller = TextEditingController(text: line.notes);
     final notes = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Preparation note'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: const InputDecoration(hintText: 'For example, no onion'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Save note'),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => _PreparationNoteDialog(initialNotes: line.notes),
     );
-    controller.dispose();
     if (notes == null || !mounted) return;
 
     final nextCart = _cart
@@ -392,6 +372,54 @@ class _CartPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PreparationNoteDialog extends StatefulWidget {
+  const _PreparationNoteDialog({required this.initialNotes});
+
+  final String initialNotes;
+
+  @override
+  State<_PreparationNoteDialog> createState() => _PreparationNoteDialogState();
+}
+
+class _PreparationNoteDialogState extends State<_PreparationNoteDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialNotes);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Preparation note'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLines: 3,
+        decoration: const InputDecoration(hintText: 'For example, no onion'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Save note'),
+        ),
+      ],
     );
   }
 }
