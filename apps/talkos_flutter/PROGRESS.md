@@ -10,7 +10,7 @@ Pull request: #1
 - `db0d4ff` and `81b204d` — Desktop module card sizing and the desktop smoke assertion were corrected. GitHub Actions run [42739362205](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42739362205) reports `flutter analyze` successful and 18 tests passed. Android, Windows, and Apple platform builds were still running at the last check.
 - `6342a2e` — POS now supports catalog products, variant and combo choices, quantity edits, and integer-paise subtotals. GitHub Actions run [42740644210](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42740644210) reports `flutter analyze` successful and 21 tests passed. Platform builds were queued at the last check.
 - `8645f12` — Menu search by product name and category passed `flutter analyze` and 22 tests in GitHub Actions run [42740942949](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42740942949).
-- `4ea77d0` — Cart preparation notes and dialog lifecycle passed `flutter analyze` and 23 tests in GitHub Actions run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130). Windows and iOS release builds passed; Android and macOS were still running at the last check.
+- `4ea77d0` — Cart preparation notes and dialog lifecycle passed `flutter analyze` and 23 tests in GitHub Actions run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130). Android APK/AAB, Windows, iOS, and macOS release builds all passed.
 
 ## Current work
 
@@ -18,4 +18,4 @@ The POS screen accepts products from an authorised catalogue caller, with search
 
 ## Resume point
 
-Start from the latest branch commit. Check run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130) for Android and macOS completion, then record the final platform matrix here.
+Start from the latest branch commit `a02ecd1`; the verified POS code is `4ea77d0`, and run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130) is green across all native tests and platform builds. Local Flutter tests are unavailable in this environment.
