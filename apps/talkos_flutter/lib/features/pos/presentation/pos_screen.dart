@@ -274,7 +274,13 @@ class _CartPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Subtotal'),
-                Text(_formatMoney(cart.subtotalPaise), style: const TextStyle(fontWeight: FontWeight.w700)),
+                Flexible(
+                  child: Text(
+                    _formatMoney(cart.subtotalPaise),
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -282,7 +288,9 @@ class _CartPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Tax'),
-                Text('Configured by branch'),
+                const Flexible(
+                  child: Text('Configured by branch', textAlign: TextAlign.end),
+                ),
               ],
             ),
             const SizedBox(height: 16),
