@@ -12,6 +12,7 @@ Pull request: #1
 - `8645f12` — Menu search by product name and category passed `flutter analyze` and 22 tests in GitHub Actions run [42740942949](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42740942949).
 - `4ea77d0` — Cart preparation notes and dialog lifecycle passed `flutter analyze` and 23 tests in GitHub Actions run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130). Android APK/AAB, Windows, iOS, and macOS release builds all passed.
 - `09ec1e8` — Root web CI lockfile/install repair and browser-safe app-store initialization passed `npm ci`, TypeScript lint, Vitest, and production build in Actions run [42746886183](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42746886183). Flutter analysis and tests also passed in run [42746878896](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42746878896); its platform build jobs were still running at the last check.
+- `6ed6694` — POS category chips combine with menu search; the regression test passed. Web CI is green in run [42747192550](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42747192550). Flutter analysis and all 24 tests passed, and Android APK/AAB, Windows, iOS, and macOS release builds passed in run [42747192471](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42747192471).
 
 ## Current work
 
@@ -21,4 +22,4 @@ The root web workflow had failed at `npm ci` because `package-lock.json` did not
 
 ## Resume point
 
-The verified POS code is `4ea77d0`, and run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130) is green across all native tests and platform builds. Commit `6c0ffb9` also completed all Android, Windows, iOS, and macOS release builds successfully in run [42746269181](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42746269181). The latest verified commit `09ec1e8` passes web install, lint, tests, and build plus Flutter analysis/tests; its new platform matrix was still running at last check. The category-filter implementation and regression test are the current unverified changes. Local Flutter tests are unavailable in this environment.
+Resume from the verified branch commit `6ed6694`. Web CI, Flutter analysis, 24 Flutter tests, and Android, Windows, iOS, and macOS release builds are green. Local Flutter tests are unavailable in this environment. The next integration priority is a KDS cooking-status transition that invokes the existing inventory deduction engine exactly once.
