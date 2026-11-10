@@ -57,6 +57,33 @@ void main() {
     expect(second.movements, hasLength(2));
   });
 
+  test('rejects duplicate order line IDs before recording movements', () {
+    final initial = seed();
+    final duplicateLines = InventoryCookingOrder(
+      orderId: 'T-duplicate-lines',
+      channel: OrderChannel.pos,
+      lines: const [
+        InventoryOrderLine(
+          lineId: 'same-line',
+          productId: 'chicken-chowmein',
+          quantity: 1,
+        ),
+        InventoryOrderLine(
+          lineId: 'same-line',
+          productId: 'chicken-chowmein',
+          quantity: 1,
+        ),
+      ],
+    );
+
+    expect(
+      () => engine.startCooking(initial, duplicateLines),
+      throwsArgumentError,
+    );
+    expect(initial.onHandMicros['noodles'], 500000);
+    expect(initial.movements, isEmpty);
+  });
+
   test('kiosk and QR use exactly the same deduction path', () {
     for (final channel in [OrderChannel.kiosk, OrderChannel.qr]) {
       final result = engine.startCooking(seed(), order(channel: channel));

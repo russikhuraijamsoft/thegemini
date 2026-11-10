@@ -135,6 +135,17 @@ class InventoryDeductionEngine {
   ) {
     if (current.cookedOrderIds.contains(order.orderId)) return current;
 
+    final lineIds = <String>{};
+    for (final line in order.lines) {
+      if (!lineIds.add(line.lineId)) {
+        throw ArgumentError.value(
+          line.lineId,
+          'order.lines',
+          'Order line IDs must be unique within an order.',
+        );
+      }
+    }
+
     final requiredByItem = <String, int>{};
     final pendingMovements = <InventoryMovement>[];
 
