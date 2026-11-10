@@ -16,6 +16,8 @@ Pull request: #1
 
 The POS screen accepts products from an authorised catalogue caller, with search by product name and category, size/combo selection, cart edits, and per-line preparation notes. Checkout stays unavailable until an order service is connected. Regression tests cover these interactions and phone-sized layout. Local Flutter tests are unavailable; remote GitHub Actions are the verification source.
 
+The root web workflow had failed at `npm ci` because `package-lock.json` did not match `package.json`. The lockfile has been regenerated. Local Node 20 `npm ci` and `npm run lint` completed successfully. Local `npm test` and `npm run build` could not start because the Android host did not install Rollup's `@rollup/rollup-linux-arm64-gnu` optional binary; CI runs on Ubuntu and will verify both commands after this change is pushed. The lockfile update does not change application source or declared dependencies.
+
 ## Resume point
 
-Start from the latest branch commit `a02ecd1`; the verified POS code is `4ea77d0`, and run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130) is green across all native tests and platform builds. Local Flutter tests are unavailable in this environment.
+The verified POS code is `4ea77d0`, and run [42741662130](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42741662130) is green across all native tests and platform builds. The current web CI lockfile repair is pending remote verification. Local Flutter tests are unavailable in this environment.
