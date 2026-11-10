@@ -237,30 +237,32 @@ class _CartPanel extends StatelessWidget {
                         final title = line.size == null
                             ? line.product.name
                             : '${line.product.name} · ${_sizeLabel(line.size!)}';
-                        return Row(
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 4),
+                            Text('${_formatMoney(line.unitPricePaise)} each · ${_formatMoney(line.lineTotalPaise)}'),
+                            for (final selection in line.selectedOptions.entries)
+                              Text(_optionLabel(line.product, selection.key, selection.value)),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                                  const SizedBox(height: 4),
-                                  Text('${_formatMoney(line.unitPricePaise)} each · ${_formatMoney(line.lineTotalPaise)}'),
-                                  for (final selection in line.selectedOptions.entries)
-                                    Text(_optionLabel(line.product, selection.key, selection.value)),
+                                  IconButton(
+                                    tooltip: 'Decrease quantity',
+                                    onPressed: () => onSetQuantity(line.id, line.quantity - 1),
+                                    icon: const Icon(Icons.remove_circle_outline),
+                                  ),
+                                  Text('${line.quantity}', semanticsLabel: 'Quantity ${line.quantity}'),
+                                  IconButton(
+                                    tooltip: 'Increase quantity',
+                                    onPressed: () => onSetQuantity(line.id, line.quantity + 1),
+                                    icon: const Icon(Icons.add_circle_outline),
+                                  ),
                                 ],
                               ),
-                            ),
-                            IconButton(
-                              tooltip: 'Decrease quantity',
-                              onPressed: () => onSetQuantity(line.id, line.quantity - 1),
-                              icon: const Icon(Icons.remove_circle_outline),
-                            ),
-                            Text('${line.quantity}', semanticsLabel: 'Quantity ${line.quantity}'),
-                            IconButton(
-                              tooltip: 'Increase quantity',
-                              onPressed: () => onSetQuantity(line.id, line.quantity + 1),
-                              icon: const Icon(Icons.add_circle_outline),
                             ),
                           ],
                         );
