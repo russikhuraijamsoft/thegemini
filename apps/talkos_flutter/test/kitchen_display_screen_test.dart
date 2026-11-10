@@ -77,9 +77,11 @@ void main() {
     KitchenState? changedState;
     final accepted = seed(flour: 100000);
     await tester.pumpWidget(MaterialApp(
-      home: KitchenDisplayScreen(
-        state: accepted,
-        onStateChanged: (value) => changedState = value,
+      home: Scaffold(
+        body: KitchenDisplayScreen(
+          state: accepted,
+          onStateChanged: (value) => changedState = value,
+        ),
       ),
     ));
 
