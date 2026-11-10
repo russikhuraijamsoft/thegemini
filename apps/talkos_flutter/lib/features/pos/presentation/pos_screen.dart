@@ -103,7 +103,7 @@ class _CartPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            SizedBox(
+            const SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: null,

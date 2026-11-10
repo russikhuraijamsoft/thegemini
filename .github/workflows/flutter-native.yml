@@ -28,6 +28,8 @@ jobs:
           channel: stable
           cache: true
       - run: flutter create --platforms=android,ios,windows,macos --project-name talkos --org com.talkofthetown .
+      - name: Remove Flutter's generated starter test
+        run: rm -f test/widget_test.dart
       - run: dart format .
       - run: flutter pub get
       - run: flutter analyze
