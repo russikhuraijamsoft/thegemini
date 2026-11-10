@@ -102,6 +102,15 @@ void main() {
     expect(accepted.inventory.onHandMicros['flour'], 500000);
   });
 
+  test('requires a ticket ID to match its inventory order ID', () {
+    final order = state().tickets['K-100']!.inventoryOrder;
+
+    expect(
+      () => KitchenTicket(id: 'different-id', inventoryOrder: order),
+      throwsArgumentError,
+    );
+  });
+
   test('cancelling an accepted ticket does not consume stock', () {
     final accepted = state();
     final cancelled = workflow.transition(

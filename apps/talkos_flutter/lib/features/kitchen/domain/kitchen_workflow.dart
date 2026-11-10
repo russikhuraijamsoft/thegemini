@@ -3,11 +3,19 @@ import '../../inventory/domain/inventory_deduction_engine.dart';
 enum KitchenTicketStatus { accepted, cooking, ready, completed, cancelled }
 
 class KitchenTicket {
-  const KitchenTicket({
+  KitchenTicket({
     required this.id,
     required this.inventoryOrder,
     this.status = KitchenTicketStatus.accepted,
-  }) : assert(id == inventoryOrder.orderId);
+  }) {
+    if (id != inventoryOrder.orderId) {
+      throw ArgumentError.value(
+        id,
+        'id',
+        'Ticket ID must match its inventory order ID.',
+      );
+    }
+  }
 
   final String id;
   final InventoryCookingOrder inventoryOrder;
