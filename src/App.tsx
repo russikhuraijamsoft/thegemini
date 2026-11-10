@@ -7,6 +7,8 @@ import { ErrorBoundary } from './core/error/ErrorBoundary';
 import { useAppStore } from './core/store/appStore';
 import './core/i18n/i18n'; // Initialize i18n
 
+import { FirstRunPasswordGate } from './shared/components/FirstRunPasswordGate';
+
 export default function App() {
   const setOfflineMode = useAppStore(state => state.setOfflineMode);
 
@@ -27,7 +29,9 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <FirstRunPasswordGate>
+            <RouterProvider router={router} />
+          </FirstRunPasswordGate>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
