@@ -91,7 +91,7 @@ class InventoryMovement {
 @immutable
 class InventoryState {
   InventoryState({
-    required this.branchId,
+    required String branchId,
     required Map<String, int> onHandMicros,
     required Map<String, InventoryRecipe> recipes,
     Set<String> appliedMovementIds = const {},
