@@ -74,6 +74,30 @@ void main() {
     expect(find.text('Test custard'), findsNothing);
   });
 
+  testWidgets('category filters combine with menu search', (tester) async {
+    const custard = PosProduct(
+      id: 'custard',
+      name: 'Test custard',
+      categoryId: 'desserts',
+      pricePaise: 800,
+    );
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea, custard])));
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'desserts'));
+    await tester.pumpAndSettle();
+    expect(find.text('Test custard'), findsOneWidget);
+    expect(find.text('Test tea'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'tea');
+    await tester.pumpAndSettle();
+    expect(find.text('No menu items match “tea”.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'All categories'));
+    await tester.pumpAndSettle();
+    expect(find.text('Test tea'), findsOneWidget);
+    expect(find.text('Test custard'), findsNothing);
+  });
+
   testWidgets('preparation notes stay on their own cart line', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea])));
     await tester.tap(find.text('Test tea'));

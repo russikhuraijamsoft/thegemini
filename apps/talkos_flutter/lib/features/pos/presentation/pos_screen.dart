@@ -151,11 +151,21 @@ class _CatalogPanel extends StatefulWidget {
 
 class _CatalogPanelState extends State<_CatalogPanel> {
   String _query = '';
+  String? _selectedCategoryId;
 
   @override
   Widget build(BuildContext context) {
     final query = _query.trim().toLowerCase();
+    final categories = widget.products
+        .map((product) => product.categoryId)
+        .toSet()
+        .toList()
+      ..sort();
     final products = widget.products.where((product) {
+      if (_selectedCategoryId != null &&
+          product.categoryId != _selectedCategoryId) {
+        return false;
+      }
       if (query.isEmpty) return true;
       return product.name.toLowerCase().contains(query) ||
           product.categoryId.toLowerCase().contains(query) ||
@@ -189,6 +199,29 @@ class _CatalogPanelState extends State<_CatalogPanel> {
               onChanged: (value) => setState(() => _query = value),
             ),
             const SizedBox(height: 16),
+            if (categories.isNotEmpty) ...[
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('All categories'),
+                      selected: _selectedCategoryId == null,
+                      onSelected: (_) => setState(() => _selectedCategoryId = null),
+                    ),
+                    for (final category in categories) ...[
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: Text(category),
+                        selected: _selectedCategoryId == category,
+                        onSelected: (_) => setState(() => _selectedCategoryId = category),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Expanded(
               child: widget.products.isEmpty
                   ? const _EmptyCatalog()
