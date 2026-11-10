@@ -6,6 +6,7 @@ void main() {
 
   InventoryState seed({int noodles = 500000, int chicken = 300000}) =>
       InventoryState(
+        branchId: TalkOsBranches.main,
         onHandMicros: {'noodles': noodles, 'chicken': chicken},
         recipes: {
           'chicken-chowmein': InventoryRecipe(
@@ -32,6 +33,7 @@ void main() {
   }) =>
       InventoryCookingOrder(
         orderId: id,
+        branchId: TalkOsBranches.main,
         channel: channel,
         lines: [
           InventoryOrderLine(
@@ -48,6 +50,7 @@ void main() {
     expect(result.onHandMicros['chicken'], 220000);
     expect(result.movements, hasLength(2));
     expect(result.movements.every((m) => m.channel == OrderChannel.pos), isTrue);
+    expect(result.movements.every((m) => m.branchId == TalkOsBranches.main), isTrue);
   });
 
   test('same cooking event cannot deduct twice', () {
@@ -61,6 +64,7 @@ void main() {
     final initial = seed();
     final duplicateLines = InventoryCookingOrder(
       orderId: 'T-duplicate-lines',
+      branchId: TalkOsBranches.main,
       channel: OrderChannel.pos,
       lines: const [
         InventoryOrderLine(
@@ -105,6 +109,7 @@ void main() {
 
   test('combines repeated ingredient rows into one ledger movement', () {
     final initial = InventoryState(
+      branchId: TalkOsBranches.main,
       onHandMicros: {'noodles': 500000},
       recipes: {
         'chicken-chowmein': InventoryRecipe(
@@ -131,6 +136,7 @@ void main() {
 
   test('missing recipe blocks cooking instead of silently skipping stock', () {
     final initial = InventoryState(
+      branchId: TalkOsBranches.main,
       onHandMicros: {'noodles': 500000},
       recipes: const {},
     );
@@ -147,5 +153,38 @@ void main() {
     );
     expect(result.movements.first.recipeVersion, 3);
     expect(result.movements.first.channel, OrderChannel.qr);
+  });
+
+  test('legacy global inventory is assigned to the first branch unchanged', () {
+    final legacy = InventoryState.forLegacyMainBranch(
+      onHandMicros: {'noodles': 500000},
+      recipes: seed().recipes,
+    );
+
+    expect(legacy.branchId, 'br_main');
+    expect(legacy.onHandMicros['noodles'], 500000);
+  });
+
+  test('an order cannot deduct another branch inventory', () {
+    final initial = seed();
+    final otherBranchOrder = InventoryCookingOrder(
+      orderId: 'T-other-branch',
+      branchId: 'br_other',
+      channel: OrderChannel.pos,
+      lines: const [
+        InventoryOrderLine(
+          lineId: 'line-1',
+          productId: 'chicken-chowmein',
+          quantity: 1,
+        ),
+      ],
+    );
+
+    expect(
+      () => engine.startCooking(initial, otherBranchOrder),
+      throwsA(isA<InventoryBranchMismatchException>()),
+    );
+    expect(initial.onHandMicros['noodles'], 500000);
+    expect(initial.movements, isEmpty);
   });
 }

@@ -3,6 +3,11 @@ import 'package:flutter/foundation.dart';
 /// The channel is recorded for audit only. Every channel uses the same engine.
 enum OrderChannel { pos, kiosk, qr }
 
+/// Stable identifier for the first TalkOS branch and the legacy data owner.
+abstract final class TalkOsBranches {
+  static const main = 'br_main';
+}
+
 /// Inventory quantities are integer thousandths of the configured base unit.
 /// Example: 1250 grams is stored as 1250000 milli-grams.
 @immutable
@@ -46,11 +51,13 @@ class InventoryOrderLine {
 class InventoryCookingOrder {
   InventoryCookingOrder({
     required this.orderId,
+    required this.branchId,
     required this.channel,
     required List<InventoryOrderLine> lines,
   }) : lines = List.unmodifiable(lines);
 
   final String orderId;
+  final String branchId;
   final OrderChannel channel;
   final List<InventoryOrderLine> lines;
 }
@@ -60,6 +67,7 @@ class InventoryMovement {
   const InventoryMovement({
     required this.id,
     required this.orderId,
+    required this.branchId,
     required this.orderLineId,
     required this.productId,
     required this.inventoryItemId,
@@ -71,6 +79,7 @@ class InventoryMovement {
   /// Stable movement key: orderId/lineId/itemId. Used for idempotency.
   final String id;
   final String orderId;
+  final String branchId;
   final String orderLineId;
   final String productId;
   final String inventoryItemId;
@@ -82,16 +91,36 @@ class InventoryMovement {
 @immutable
 class InventoryState {
   InventoryState({
+    required this.branchId,
     required Map<String, int> onHandMicros,
     required Map<String, InventoryRecipe> recipes,
     Set<String> appliedMovementIds = const {},
     List<InventoryMovement> movements = const [],
     Set<String> cookedOrderIds = const {},
-  })  : onHandMicros = Map.unmodifiable(onHandMicros),
+  })  : branchId = _requireBranchId(branchId),
+        onHandMicros = Map.unmodifiable(onHandMicros),
         recipes = Map.unmodifiable(recipes),
         appliedMovementIds = Set.unmodifiable(appliedMovementIds),
         movements = List.unmodifiable(movements),
         cookedOrderIds = Set.unmodifiable(cookedOrderIds);
+
+  /// Associates legacy, previously unscoped inventory with the first branch.
+  /// Quantities and recipes are preserved exactly; this does not seed stock.
+  factory InventoryState.forLegacyMainBranch({
+    required Map<String, int> onHandMicros,
+    required Map<String, InventoryRecipe> recipes,
+    Set<String> appliedMovementIds = const {},
+    List<InventoryMovement> movements = const [],
+    Set<String> cookedOrderIds = const {},
+  }) =>
+      InventoryState(
+        branchId: TalkOsBranches.main,
+        onHandMicros: onHandMicros,
+        recipes: recipes,
+        appliedMovementIds: appliedMovementIds,
+        movements: movements,
+        cookedOrderIds: cookedOrderIds,
+      );
 
   /// On-hand quantity in integer micro-units; no floating point stock math.
   final Map<String, int> onHandMicros;
@@ -99,6 +128,24 @@ class InventoryState {
   final Set<String> appliedMovementIds;
   final List<InventoryMovement> movements;
   final Set<String> cookedOrderIds;
+}
+
+String _requireBranchId(String branchId) {
+  if (branchId.trim().isEmpty) {
+    throw ArgumentError.value(branchId, 'branchId', 'Branch ID cannot be empty.');
+  }
+  return branchId;
+}
+
+class InventoryBranchMismatchException implements Exception {
+  const InventoryBranchMismatchException(this.inventoryBranchId, this.orderBranchId);
+
+  final String inventoryBranchId;
+  final String orderBranchId;
+
+  @override
+  String toString() =>
+      'Order branch $orderBranchId cannot use inventory for $inventoryBranchId.';
 }
 
 class InsufficientInventoryException implements Exception {
@@ -133,6 +180,9 @@ class InventoryDeductionEngine {
     InventoryState current,
     InventoryCookingOrder order,
   ) {
+    if (current.branchId != order.branchId) {
+      throw InventoryBranchMismatchException(current.branchId, order.branchId);
+    }
     if (current.cookedOrderIds.contains(order.orderId)) return current;
 
     final lineIds = <String>{};
@@ -167,7 +217,7 @@ class InventoryDeductionEngine {
       for (final entry in lineRequirements.entries) {
         final amount = entry.value * line.quantity;
         final movementId =
-            '${order.orderId}/${line.lineId}/${entry.key}';
+            '${order.branchId}/${order.orderId}/${line.lineId}/${entry.key}';
         if (current.appliedMovementIds.contains(movementId)) continue;
         requiredByItem.update(
           entry.key,
@@ -177,6 +227,7 @@ class InventoryDeductionEngine {
         pendingMovements.add(InventoryMovement(
           id: movementId,
           orderId: order.orderId,
+          branchId: order.branchId,
           orderLineId: line.lineId,
           productId: line.productId,
           inventoryItemId: entry.key,
@@ -200,6 +251,7 @@ class InventoryDeductionEngine {
     }
 
     return InventoryState(
+      branchId: current.branchId,
       onHandMicros: nextStock,
       recipes: current.recipes,
       appliedMovementIds: {

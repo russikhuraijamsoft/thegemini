@@ -21,6 +21,11 @@ class KitchenTicket {
         'Ticket ID must match its inventory order ID.',
       );
     }
+    if (branchId != inventoryOrder.branchId) {
+      throw ArgumentError(
+        'Kitchen ticket and inventory order must belong to the same branch.',
+      );
+    }
   }
 
   final String id;
@@ -54,6 +59,9 @@ class KitchenState {
     }
     if (tickets.values.any((ticket) => ticket.branchId != branchId)) {
       throw ArgumentError('Kitchen tickets must belong to the state branch.');
+    }
+    if (inventory.branchId != branchId) {
+      throw ArgumentError('Kitchen inventory must belong to the state branch.');
     }
   }
 

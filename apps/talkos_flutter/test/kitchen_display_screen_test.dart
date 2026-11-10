@@ -8,6 +8,7 @@ void main() {
   KitchenState seed({int flour = 500000}) {
     final order = InventoryCookingOrder(
       orderId: 'K-200',
+      branchId: 'br_main',
       channel: OrderChannel.pos,
       lines: const [
         InventoryOrderLine(
@@ -29,6 +30,7 @@ void main() {
         ),
       },
       inventory: InventoryState(
+        branchId: 'br_main',
         onHandMicros: {'flour': flour},
         recipes: {
           'pancakes': InventoryRecipe(

@@ -20,6 +20,11 @@ accepted order to **Preparing / Cooking**. The KDS transition handler must call
 
 ## Integration boundary
 
+Inventory state is branch-owned. Legacy unscoped inventory can be associated
+with the first branch using `InventoryState.forLegacyMainBranch`; that adapter
+preserves the supplied balances and recipes and does not invent inventory data.
+Orders, kitchen tickets, and inventory state must all name the same branch.
+
 This is the tested domain engine, not yet a production database transaction. The
 production repository must persist the KDS status transition, stock ledger entries,
 idempotency keys and new balances in one atomic transaction. If the transaction
@@ -28,4 +33,6 @@ the KDS transition and let the server apply the idempotent transaction; clients 
 not independently mutate authoritative stock.
 
 No live inventory is connected by this change. Recipes and opening balances must
-come from the authorised branch inventory before production use.
+come from the authorised branch inventory before production use. The repository
+does not contain a verified inventory-record count; use the connected source of
+truth to establish that count before any migration.

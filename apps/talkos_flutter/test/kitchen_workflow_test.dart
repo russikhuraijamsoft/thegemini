@@ -8,6 +8,7 @@ void main() {
   KitchenState state({int flour = 500000}) {
     final order = InventoryCookingOrder(
       orderId: 'K-100',
+      branchId: 'br_main',
       channel: OrderChannel.pos,
       lines: const [
         InventoryOrderLine(
@@ -27,6 +28,7 @@ void main() {
         ),
       },
       inventory: InventoryState(
+        branchId: 'br_main',
         onHandMicros: {'flour': flour},
         recipes: {
           'pancakes': InventoryRecipe(
@@ -146,17 +148,29 @@ void main() {
 
   test('rejects tickets from a different branch', () {
     final current = state();
-    final foreignTicket = KitchenTicket(
-      id: 'K-100',
+    expect(
+      () => KitchenTicket(
+        id: 'K-100',
+        branchId: 'br_other',
+        inventoryOrder: current.tickets['K-100']!.inventoryOrder,
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('rejects inventory from a different branch', () {
+    final current = state();
+    final foreignInventory = InventoryState(
       branchId: 'br_other',
-      inventoryOrder: current.tickets['K-100']!.inventoryOrder,
+      onHandMicros: current.inventory.onHandMicros,
+      recipes: current.inventory.recipes,
     );
 
     expect(
       () => KitchenState(
         branchId: 'br_main',
-        tickets: {'K-100': foreignTicket},
-        inventory: current.inventory,
+        tickets: current.tickets,
+        inventory: foreignInventory,
       ),
       throwsArgumentError,
     );
