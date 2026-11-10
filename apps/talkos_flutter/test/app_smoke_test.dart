@@ -16,7 +16,7 @@ void main() {
     await tester.pumpWidget(const TalkOsApp());
 
     expect(find.text('TalkOS'), findsOneWidget);
-    expect(find.text('Overview'), findsOneWidget);
+    expect(find.text('Overview'), findsNWidgets(2));
     expect(find.text('Operations modules'), findsOneWidget);
 
     addTearDown(tester.view.resetPhysicalSize);
