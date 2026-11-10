@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../kitchen/presentation/kitchen_display_screen.dart';
 import '../../pos/presentation/pos_screen.dart';
 
 enum _Section { overview, pos, kitchen, inventory, more }
@@ -28,9 +29,11 @@ class _TalkOsShellState extends State<TalkOsShell> {
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 900;
         final index = _navigationItems.indexWhere((item) => item.id == _section);
-        final body = _section == _Section.pos
-            ? const PosScreen()
-            : _SectionLanding(section: _section);
+        final body = switch (_section) {
+          _Section.pos => const PosScreen(),
+          _Section.kitchen => const KitchenDisplayScreen(),
+          _ => _SectionLanding(section: _section),
+        };
 
         if (desktop) {
           return Scaffold(

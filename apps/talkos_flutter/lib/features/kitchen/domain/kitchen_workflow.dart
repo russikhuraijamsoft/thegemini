@@ -7,7 +7,9 @@ class KitchenTicket {
     required this.id,
     required this.inventoryOrder,
     this.status = KitchenTicketStatus.accepted,
-  }) {
+    this.tableLabel,
+    Map<String, String> productNames = const {},
+  }) : productNames = Map.unmodifiable(productNames) {
     if (id != inventoryOrder.orderId) {
       throw ArgumentError.value(
         id,
@@ -20,11 +22,15 @@ class KitchenTicket {
   final String id;
   final InventoryCookingOrder inventoryOrder;
   final KitchenTicketStatus status;
+  final String? tableLabel;
+  final Map<String, String> productNames;
 
   KitchenTicket withStatus(KitchenTicketStatus value) => KitchenTicket(
         id: id,
         inventoryOrder: inventoryOrder,
         status: value,
+        tableLabel: tableLabel,
+        productNames: productNames,
       );
 }
 

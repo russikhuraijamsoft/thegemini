@@ -72,6 +72,28 @@ void main() {
     expect(retried.inventory.movements, hasLength(1));
   });
 
+  test('cooking tickets can advance through ready to completed', () {
+    final cooking = workflow.transition(
+      state(),
+      orderId: 'K-100',
+      to: KitchenTicketStatus.cooking,
+    );
+    final ready = workflow.transition(
+      cooking,
+      orderId: 'K-100',
+      to: KitchenTicketStatus.ready,
+    );
+    final completed = workflow.transition(
+      ready,
+      orderId: 'K-100',
+      to: KitchenTicketStatus.completed,
+    );
+
+    expect(completed.tickets['K-100']?.status, KitchenTicketStatus.completed);
+    expect(completed.inventory, same(cooking.inventory));
+    expect(completed.inventory.movements, hasLength(1));
+  });
+
   test('a stock shortage leaves the ticket accepted and inventory unchanged', () {
     final accepted = state(flour: 100000);
 
