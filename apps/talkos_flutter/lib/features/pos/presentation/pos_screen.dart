@@ -116,14 +116,29 @@ class _PosScreenState extends State<PosScreen> {
   }
 }
 
-class _CatalogPanel extends StatelessWidget {
+class _CatalogPanel extends StatefulWidget {
   const _CatalogPanel({required this.products, required this.onProductTap});
 
   final List<PosProduct> products;
   final ValueChanged<PosProduct> onProductTap;
 
   @override
+  State<_CatalogPanel> createState() => _CatalogPanelState();
+}
+
+class _CatalogPanelState extends State<_CatalogPanel> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
+    final query = _query.trim().toLowerCase();
+    final products = widget.products.where((product) {
+      if (query.isEmpty) return true;
+      return product.name.toLowerCase().contains(query) ||
+          product.categoryId.toLowerCase().contains(query) ||
+          (product.comboDescription?.toLowerCase().contains(query) ?? false);
+    }).toList();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -134,9 +149,28 @@ class _CatalogPanel extends StatelessWidget {
             const SizedBox(height: 8),
             const Text('Products and prices are supplied by the authorised branch catalogue.'),
             const SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Search menu',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        onPressed: () => setState(() => _query = ''),
+                        icon: const Icon(Icons.clear),
+                      ),
+                border: const OutlineInputBorder(),
+                isDense: true,
+              ),
+              onChanged: (value) => setState(() => _query = value),
+            ),
+            const SizedBox(height: 16),
             Expanded(
-              child: products.isEmpty
+              child: widget.products.isEmpty
                   ? const _EmptyCatalog()
+                  : products.isEmpty
+                      ? Center(child: Text('No menu items match “${_query.trim()}”.'))
                   : LayoutBuilder(
                       builder: (context, constraints) {
                         final columns = constraints.maxWidth >= 680 ? 3 : constraints.maxWidth >= 400 ? 2 : 1;
@@ -160,7 +194,7 @@ class _CatalogPanel extends StatelessWidget {
                             return Card(
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(12),
-                                onTap: () => onProductTap(product),
+                                onTap: () => widget.onProductTap(product),
                                 child: Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Column(

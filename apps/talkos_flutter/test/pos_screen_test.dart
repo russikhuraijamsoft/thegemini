@@ -54,6 +54,26 @@ void main() {
     expect(find.text('₹24.00'), findsOneWidget);
   });
 
+  testWidgets('menu search matches product names and category IDs', (tester) async {
+    const custard = PosProduct(
+      id: 'custard',
+      name: 'Test custard',
+      categoryId: 'desserts',
+      pricePaise: 800,
+    );
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea, custard])));
+
+    await tester.enterText(find.byType(TextField), 'dessert');
+    await tester.pumpAndSettle();
+    expect(find.text('Test custard'), findsOneWidget);
+    expect(find.text('Test tea'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'test tea');
+    await tester.pumpAndSettle();
+    expect(find.text('Test tea'), findsOneWidget);
+    expect(find.text('Test custard'), findsNothing);
+  });
+
   testWidgets('catalogue and cart fit a phone-sized viewport', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
