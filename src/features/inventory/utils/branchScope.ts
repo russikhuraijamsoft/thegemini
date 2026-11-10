@@ -12,6 +12,16 @@ export function scopeInventoryItem<T extends object>(
   return { ...item, branchId: resolveInventoryBranchId(item.branchId) };
 }
 
+export function scopeInventoryItemsForBranch<T extends object>(
+  items: Array<T & { branchId?: string | null }>,
+  branchId?: string | null,
+): Array<T & { branchId: string }> {
+  const activeBranchId = resolveInventoryBranchId(branchId);
+  return items
+    .map((item) => scopeInventoryItem(item))
+    .filter((item) => item.branchId === activeBranchId);
+}
+
 export function resolveTransactionBranchId(
   transactionBranchId: string | undefined,
   itemBranchId: string | undefined,

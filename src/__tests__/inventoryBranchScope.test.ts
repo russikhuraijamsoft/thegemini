@@ -4,6 +4,7 @@ import {
   resolveInventoryBranchId,
   resolveTransactionBranchId,
   scopeInventoryItem,
+  scopeInventoryItemsForBranch,
 } from '../features/inventory/utils/branchScope';
 
 describe('inventory branch ownership', () => {
@@ -15,6 +16,26 @@ describe('inventory branch ownership', () => {
 
   it('preserves an explicit branch assignment', () => {
     expect(scopeInventoryItem({ id: 'inv-2', branchId: 'br_west' }).branchId).toBe('br_west');
+  });
+
+  it('returns only active-branch stock while mapping legacy items to the main branch', () => {
+    const items = scopeInventoryItemsForBranch(
+      [
+        { id: 'legacy-item' },
+        { id: 'main-item', branchId: FIRST_BRANCH_ID },
+        { id: 'west-item', branchId: 'br_west' },
+      ],
+      FIRST_BRANCH_ID,
+    );
+
+    expect(items.map((item) => item.id)).toEqual(['legacy-item', 'main-item']);
+    expect(items.every((item) => item.branchId === FIRST_BRANCH_ID)).toBe(true);
+  });
+
+  it('does not return main-branch legacy stock in another branch', () => {
+    expect(
+      scopeInventoryItemsForBranch([{ id: 'legacy-item' }], 'br_west'),
+    ).toEqual([]);
   });
 
   it('normalizes a selected branch and defaults blank values to the first branch', () => {
