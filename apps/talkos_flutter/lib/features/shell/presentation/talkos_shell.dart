@@ -208,7 +208,7 @@ class _ModuleGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            mainAxisExtent: 112,
+            mainAxisExtent: 128,
           ),
           itemBuilder: (context, index) {
             final module = modules[index];
