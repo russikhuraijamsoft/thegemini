@@ -1,7 +1,9 @@
 {
-  "name": "react-example",
+  "name": "talkos-app",
+  "description": "TalkOS Enterprise Restaurant Operating System",
+  "author": "Talk of the Town",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -49,7 +51,8 @@
         "dmg",
         "zip"
       ],
-      "category": "public.app-category.business"
+      "category": "public.app-category.business",
+      "identity": null
     }
   },
   "dependencies": {
