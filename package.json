@@ -3,22 +3,54 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "build:pwa": "vite build",
-    "build:electron": "vite build && esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.js && esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.js",
-    "build:win": "npm run build:electron && echo Windows executable packaging prepared",
-    "build:linux": "npm run build:electron && echo Linux desktop packaging prepared",
-    "build:mac": "npm run build:electron && echo macOS desktop packaging prepared",
+    "build:electron": "vite build && esbuild electron/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/main.cjs && esbuild electron/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/preload.cjs",
+    "build:win": "npm run build:electron && npx --yes electron-builder --win --x64 -c.directories.output=dist-release",
+    "build:linux": "npm run build:electron && npx --yes electron-builder --linux AppImage tar.gz -c.directories.output=dist-release",
+    "build:mac": "npm run build:electron && npx --yes electron-builder --mac dmg zip -c.mac.identity=null -c.directories.output=dist-release",
     "cap:sync": "npx cap sync",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js dist-electron",
+    "clean": "rm -rf dist server.js dist-electron dist-release",
     "lint": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "build": {
+    "appId": "com.talkofthetown.pos",
+    "productName": "TalkOS",
+    "directories": {
+      "output": "dist-release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "category": "Office"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.business"
+    }
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
