@@ -23,6 +23,12 @@ Pull request: #1
 
 - `fe473d9` — Added native Linux desktop build job and release packaging across all 5 targets (Android APK/AAB, Windows x64 zip, Linux x64 tar.gz, macOS zip, iOS zip) in `.github/workflows/flutter-native.yml`. Run [43067317231](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43067317231) verified Linux desktop release bundle, Windows release zip, and Android APK/AAB builds.
 
+- `9a4baab` — Multi-platform packaging configured for the full TalkOS application (including Kiosks, CRM/CEMS, POS, Inventory, Tables, and KDS) across all platforms. Verified in GitHub Actions run [43092336596](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43092336596):
+  - **Android APK**: `talkos-android-apk` built in 2m 26s (`app-debug.apk` directly installable on devices).
+  - **Windows Desktop**: `talkos-windows-x64` built in 5m 1s (`.exe` and portable zip).
+  - **Linux Desktop**: `talkos-linux-x64` built in 8m 34s (`.AppImage` and `.tar.gz`).
+  - **macOS Desktop**: `talkos-macos-universal` built in 5m 4s (`.dmg` and `.zip`).
+
 ## Current work
 
 Verified native milestone `ea5453d`: Actions run `42760541249` passed analysis, all 39 Flutter tests, Android APK/AAB, Windows, iOS, and macOS builds. Web inventory legacy mapping passed TypeScript lint, 5 Vitest files, and the production build in run `42761761491`; the corrected helper is in `bad7bb0`. Active-branch inventory filtering and cross-branch transaction regressions passed CI in commit aaeeb69. Firestore inventory reads returned HTTP 403 without authentication, so the count (including the suggested 144) is unknown from this checkout.
