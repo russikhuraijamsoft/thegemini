@@ -19,7 +19,9 @@ Pull request: #1
 
 - `aaeeb69` — Web inventory maps unscoped items to `br_main`, scopes new items and stock movements, and filters reads to the active branch. Web run [42762406906](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42762406906) passed lint, 26 tests across 5 files, and production build. Flutter run [42762406936](https://github.com/russikhuraijamsoft/thegemini/actions/runs/42762406936) passed analysis, 39 tests, and Android APK/AAB, Windows, iOS, and macOS builds.
 
-- `c530fd2` — Added native `InventoryScreen` with dual tabs ("Stock on hand" with search and status badges, and "Ledger movements" for deduction audit trails), respecting branch scoping and empty-state requirements, integrated into `TalkOsShell` navigation. Web CI passed in run [43057708300](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43057708300) (lint, Vitest, build in 49s). Flutter CI passed analysis and all 44 tests in run [43057708254](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43057708254).
+- `c530fd2` — Added native `InventoryScreen` with dual tabs ("Stock on hand" with search and status badges, and "Ledger movements" for deduction audit trails), respecting branch scoping and empty-state requirements, integrated into `TalkOSShell` navigation. Web CI passed in run [43057708300](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43057708300) (lint, Vitest, build in 49s). Flutter CI passed analysis and all 44 tests in run [43057708254](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43057708254).
+
+- `fe473d9` — Added native Linux desktop build job and release packaging across all 5 targets (Android APK/AAB, Windows x64 zip, Linux x64 tar.gz, macOS zip, iOS zip) in `.github/workflows/flutter-native.yml`. Run [43067317231](https://github.com/russikhuraijamsoft/thegemini/actions/runs/43067317231) verified Linux desktop release bundle, Windows release zip, and Android APK/AAB builds.
 
 ## Current work
 
