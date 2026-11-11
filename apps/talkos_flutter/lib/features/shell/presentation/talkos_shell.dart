@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../inventory/presentation/inventory_screen.dart';
 import '../../kitchen/presentation/kitchen_display_screen.dart';
 import '../../pos/presentation/pos_screen.dart';
 
@@ -32,6 +33,7 @@ class _TalkOsShellState extends State<TalkOsShell> {
         final body = switch (_section) {
           _Section.pos => const PosScreen(),
           _Section.kitchen => const KitchenDisplayScreen(),
+          _Section.inventory => const InventoryScreen(),
           _ => _SectionLanding(section: _section),
         };
 
