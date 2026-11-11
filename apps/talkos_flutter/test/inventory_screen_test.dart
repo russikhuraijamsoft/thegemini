@@ -22,7 +22,7 @@ void main() {
 
   testWidgets('does not invent inventory when no branch service is connected',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: InventoryScreen()));
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: InventoryScreen())));
 
     expect(find.text('Inventory not connected'), findsOneWidget);
     expect(
@@ -40,18 +40,20 @@ void main() {
     final state = seedState();
     await tester.pumpWidget(
       MaterialApp(
-        home: InventoryScreen(
-          state: state,
-          itemNames: const {
-            'flour': 'Wheat flour',
-            'sugar': 'White sugar',
-            'salt': 'Table salt',
-          },
-          itemUnits: const {
-            'flour': 'kg',
-            'sugar': 'kg',
-            'salt': 'kg',
-          },
+        home: Scaffold(
+          body: InventoryScreen(
+            state: state,
+            itemNames: const {
+              'flour': 'Wheat flour',
+              'sugar': 'White sugar',
+              'salt': 'Table salt',
+            },
+            itemUnits: const {
+              'flour': 'kg',
+              'sugar': 'kg',
+              'salt': 'kg',
+            },
+          ),
         ),
       ),
     );
@@ -77,13 +79,15 @@ void main() {
     final state = seedState();
     await tester.pumpWidget(
       MaterialApp(
-        home: InventoryScreen(
-          state: state,
-          itemNames: const {
-            'flour': 'Wheat flour',
-            'sugar': 'White sugar',
-            'salt': 'Table salt',
-          },
+        home: Scaffold(
+          body: InventoryScreen(
+            state: state,
+            itemNames: const {
+              'flour': 'Wheat flour',
+              'sugar': 'White sugar',
+              'salt': 'Table salt',
+            },
+          ),
         ),
       ),
     );
@@ -109,8 +113,10 @@ void main() {
     final state = seedState();
     await tester.pumpWidget(
       MaterialApp(
-        home: InventoryScreen(
-          state: state,
+        home: Scaffold(
+          body: InventoryScreen(
+            state: state,
+          ),
         ),
       ),
     );
@@ -142,10 +148,12 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: InventoryScreen(
-          state: state,
-          itemNames: const {'flour': 'Wheat flour'},
-          itemUnits: const {'flour': 'kg'},
+        home: Scaffold(
+          body: InventoryScreen(
+            state: state,
+            itemNames: const {'flour': 'Wheat flour'},
+            itemUnits: const {'flour': 'kg'},
+          ),
         ),
       ),
     );

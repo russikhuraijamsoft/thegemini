@@ -59,74 +59,77 @@ class _InventoryScreenState extends State<InventoryScreen>
     }).toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Inventory',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Active branch: ${inventoryState.branchId}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.black54,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Chip(
-                  avatar: const Icon(Icons.store_outlined, size: 18),
-                  label: Text(inventoryState.branchId),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TabBar(
-              controller: _tabController,
-              tabs: [
-                Tab(
-                  icon: const Icon(Icons.inventory_2_outlined),
-                  text: 'Stock on hand (${inventoryState.onHandMicros.length})',
-                ),
-                Tab(
-                  icon: const Icon(Icons.history_outlined),
-                  text: 'Ledger movements (${inventoryState.movements.length})',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  _StockTabView(
-                    items: items,
-                    searchQuery: _searchQuery,
-                    onSearchChanged: (value) =>
-                        setState(() => _searchQuery = value),
-                    itemNames: widget.itemNames,
-                    itemUnits: widget.itemUnits,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Inventory',
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Active branch: ${inventoryState.branchId}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.black54,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
-                  _MovementsTabView(
-                    movements: inventoryState.movements,
-                    itemNames: widget.itemNames,
-                    itemUnits: widget.itemUnits,
+                  Chip(
+                    avatar: const Icon(Icons.store_outlined, size: 18),
+                    label: Text(inventoryState.branchId),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TabBar(
+                controller: _tabController,
+                tabs: [
+                  Tab(
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    text: 'Stock on hand (${inventoryState.onHandMicros.length})',
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.history_outlined),
+                    text: 'Ledger movements (${inventoryState.movements.length})',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _StockTabView(
+                      items: items,
+                      searchQuery: _searchQuery,
+                      onSearchChanged: (value) =>
+                          setState(() => _searchQuery = value),
+                      itemNames: widget.itemNames,
+                      itemUnits: widget.itemUnits,
+                    ),
+                    _MovementsTabView(
+                      movements: inventoryState.movements,
+                      itemNames: widget.itemNames,
+                      itemUnits: widget.itemUnits,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
