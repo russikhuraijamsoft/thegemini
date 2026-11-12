@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { authService, getFriendlyAuthErrorMessage } from '../services/authService';
 import { Mail, Loader2, ArrowLeft } from 'lucide-react';
 
 export function ForgotPasswordPage() {
@@ -19,7 +19,7 @@ export function ForgotPasswordPage() {
       await authService.resetPassword(email);
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to send password reset email');
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

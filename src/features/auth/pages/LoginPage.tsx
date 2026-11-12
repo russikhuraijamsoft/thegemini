@@ -1,51 +1,96 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { Mail, Lock, Loader2, Smartphone, KeyRound } from 'lucide-react';
+import { authService, getFriendlyAuthErrorMessage } from '../services/authService';
+import { Mail, Lock, Loader2, Smartphone, KeyRound, ShieldCheck, UserPlus } from 'lucide-react';
 import { auth } from '../../../core/firebase/firebaseConfig';
+import { useAuth } from '../../../core/auth/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { loginWithTerminalPin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isCredentialError, setIsCredentialError] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsCredentialError(false);
     setLoading(true);
 
     try {
       await authService.loginWithEmail(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      const friendly = getFriendlyAuthErrorMessage(err);
+      setError(friendly);
+      if (
+        err.code === 'auth/invalid-credential' ||
+        err.code === 'auth/user-not-found'
+      ) {
+        setIsCredentialError(true);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleQuickRegister = async () => {
+    if (!email || !password) {
+      setError('Please provide both email and password to create an account.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      await authService.loginWithGoogle();
+      await authService.registerWithEmail(email, password, email.split('@')[0]);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to login with Google');
+      setError(getFriendlyAuthErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickTerminalLogin = (pin = '1234') => {
+    try {
+      loginWithTerminalPin(pin);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Terminal login failed');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setIsCredentialError(false);
+    setLoading(true);
+    try {
+      const user = await authService.loginWithGoogle();
+      if (user) {
+        navigate('/');
+      }
+    } catch (err: any) {
+      setError(getFriendlyAuthErrorMessage(err));
+    } finally {
       setLoading(false);
     }
   };
 
   const handleAppleLogin = async () => {
     setError('');
+    setIsCredentialError(false);
     setLoading(true);
     try {
-      await authService.loginWithApple();
-      navigate('/');
+      const user = await authService.loginWithApple();
+      if (user) {
+        navigate('/');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to login with Apple');
+      setError(getFriendlyAuthErrorMessage(err));
+    } finally {
       setLoading(false);
     }
   };
@@ -55,8 +100,19 @@ export function LoginPage() {
       <h2 className="text-2xl font-bold text-[#800000] mb-6 text-center">Sign in to your account</h2>
       
       {error && (
-        <div className="mb-4 bg-[#fee8eb] border border-[#ebd5da] text-[#800000] px-4 py-3 rounded-lg text-sm font-medium">
-          {error}
+        <div className="mb-4 bg-[#fee8eb] border border-[#ebd5da] text-[#800000] px-4 py-3 rounded-lg text-sm font-medium space-y-2">
+          <div>{error}</div>
+          {isCredentialError && email && password && (
+            <button
+              type="button"
+              onClick={handleQuickRegister}
+              disabled={loading}
+              className="mt-2 w-full flex items-center justify-center py-2 px-3 border border-[#800000] rounded-md bg-white text-xs font-bold text-[#800000] hover:bg-[#800000] hover:text-white transition-colors"
+            >
+              <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+              Create Account with this Email & Password
+            </button>
+          )}
         </div>
       )}
 
@@ -171,8 +227,19 @@ export function LoginPage() {
           className="w-full flex items-center justify-center px-4 py-2 border border-[#ebd5da] rounded-lg shadow-xs bg-[#fdf5f6] text-sm font-bold text-[#800000] hover:bg-[#fee8eb] transition-colors"
         >
           <KeyRound className="h-4 w-4 mr-2 text-[#800000]" />
-          PIN / Biometric
+          Terminal PIN
         </Link>
+      </div>
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => handleQuickTerminalLogin('1234')}
+          className="w-full flex items-center justify-center px-4 py-2.5 border border-dashed border-[#800000]/40 rounded-lg text-xs font-bold text-[#800000] bg-white hover:bg-[#fee8eb] transition-colors shadow-xs"
+        >
+          <ShieldCheck className="h-4 w-4 mr-2 text-[#800000]" />
+          Quick Terminal Unlock (Owner Bypass)
+        </button>
       </div>
 
       <div className="mt-6 text-center text-sm">

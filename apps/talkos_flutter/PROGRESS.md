@@ -29,6 +29,8 @@ Pull request: #1
   - **Linux Desktop**: `talkos-linux-x64` built in 8m 34s (`.AppImage` and `.tar.gz`).
   - **macOS Desktop**: `talkos-macos-universal` built in 5m 4s (`.dmg` and `.zip`).
 
+- `fix-cloud-firebase-auth` — Cloud Firebase authentication repaired for native mobile and desktop webviews: added `signInWithRedirect` and `getRedirectResult` fallback for mobile webviews blocking popups, friendly auth error messages, inline 1-click account creation when credentials do not exist, and direct terminal PIN unlock (`1234` for Owner, `9999` for Manager, `0000` for Cashier).
+
 ## Current work
 
 Verified native milestone `ea5453d`: Actions run `42760541249` passed analysis, all 39 Flutter tests, Android APK/AAB, Windows, iOS, and macOS builds. Web inventory legacy mapping passed TypeScript lint, 5 Vitest files, and the production build in run `42761761491`; the corrected helper is in `bad7bb0`. Active-branch inventory filtering and cross-branch transaction regressions passed CI in commit aaeeb69. Firestore inventory reads returned HTTP 403 without authentication, so the count (including the suggested 144) is unknown from this checkout.

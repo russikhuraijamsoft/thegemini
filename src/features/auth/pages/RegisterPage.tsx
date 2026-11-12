@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { authService, getFriendlyAuthErrorMessage } from '../services/authService';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
 
 export function RegisterPage() {
@@ -20,7 +20,7 @@ export function RegisterPage() {
       await authService.registerWithEmail(email, password, name);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
