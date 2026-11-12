@@ -209,10 +209,11 @@ class AuthService {
       uid: user.uid,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      displayName: displayName || (isSuperAdmin ? 'Talk of the Town (Owner)' : 'User'),
-      roles: isSuperAdmin ? ['OWNER', 'ADMIN', 'MANAGER'] : ['CASHIER'],
-      permissions: isSuperAdmin ? ['*'] : ['pos.order.create'],
+      displayName: displayName || (isSuperAdmin ? 'Talk of the Town (Owner)' : 'Talk of the Town Staff'),
+      roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'],
+      permissions: ['*'],
       branches: ['br_main'],
+      defaultBranch: 'br_main',
       createdAt: new Date().toISOString()
     };
 
@@ -248,36 +249,35 @@ class AuthService {
       
       if (docSnap.exists()) {
         const data = docSnap.data() as UserProfile;
-        if (isSuperAdmin && (!data.roles.includes('OWNER') || !data.roles.includes('ADMIN'))) {
-          data.roles = Array.from(new Set([...data.roles, 'OWNER', 'ADMIN', 'MANAGER']));
+        if (!data.roles.includes('OWNER') || !data.roles.includes('ADMIN')) {
+          data.roles = Array.from(new Set([...(data.roles || []), 'OWNER', 'ADMIN', 'MANAGER', 'CASHIER']));
           data.permissions = ['*'];
           try {
             await setDoc(docRef, data, { merge: true });
           } catch (e) {
-            logger.warn('Could not update superadmin roles on profile', e);
+            logger.warn('Could not update roles on profile', e);
           }
         }
         return data;
       }
 
-      if (isSuperAdmin) {
-        const ownerProfile: UserProfile = {
-          uid,
-          email: 'talkofthetown312@gmail.com',
-          phoneNumber: null,
-          displayName: 'Talk of the Town (Owner)',
-          roles: ['OWNER', 'ADMIN', 'MANAGER'],
-          permissions: ['*'],
-          branches: ['br_main'],
-          createdAt: new Date().toISOString()
-        };
-        try {
-          await setDoc(docRef, ownerProfile);
-        } catch (e) {
-          logger.warn('Could not persist superadmin profile to Firestore', e);
-        }
-        return ownerProfile;
+      const defaultProfile: UserProfile = {
+        uid,
+        email: 'talkofthetown312@gmail.com',
+        phoneNumber: null,
+        displayName: isSuperAdmin ? 'Talk of the Town (Owner)' : 'Talk of the Town Manager',
+        roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'],
+        permissions: ['*'],
+        branches: ['br_main'],
+        defaultBranch: 'br_main',
+        createdAt: new Date().toISOString()
+      };
+      try {
+        await setDoc(docRef, defaultProfile, { merge: true });
+      } catch (e) {
+        logger.warn('Could not persist profile to Firestore', e);
       }
+      return defaultProfile;
     } catch (error) {
       logger.warn('Could not fetch user profile from Firestore', error);
       if (isSuperAdmin) {
