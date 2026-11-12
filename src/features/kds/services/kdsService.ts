@@ -4,16 +4,23 @@ import { db } from '../../../core/firebase/firebaseConfig';
 
 class KdsService {
   async getStations(): Promise<Station[]> {
-    if (!db) {
-      return [
-        { id: 'st_1', name: 'Grill Station', type: 'KITCHEN', isActive: true },
-        { id: 'st_2', name: 'Salad Station', type: 'KITCHEN', isActive: true },
-        { id: 'st_3', name: 'Drink Station', type: 'BAR', isActive: true }
-      ];
+    const defaultStations: Station[] = [
+      { id: 'st_1', name: 'Grill Station', type: 'KITCHEN', isActive: true },
+      { id: 'st_2', name: 'Salad Station', type: 'KITCHEN', isActive: true },
+      { id: 'st_3', name: 'Drink Station', type: 'BAR', isActive: true }
+    ];
+    if (!db) return defaultStations;
+    try {
+      const q = query(collection(db, 'stations'));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Station));
+      }
+      return defaultStations;
+    } catch (e) {
+      console.warn("Using stations fallback:", e);
+      return defaultStations;
     }
-    const q = query(collection(db, 'stations'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Station));
   }
 
   // Real-time listener for tickets

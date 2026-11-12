@@ -1,0 +1,133 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:talkos/features/pos/domain/pos_product.dart';
+import 'package:talkos/features/pos/presentation/pos_screen.dart';
+
+void main() {
+  const tea = PosProduct(
+    id: 'tea',
+    name: 'Test tea',
+    categoryId: 'drinks',
+    pricePaise: 1250,
+  );
+
+  testWidgets('catalogue products can be added and quantities update subtotal', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea])));
+
+    await tester.tap(find.text('Test tea'));
+    await tester.pumpAndSettle();
+    expect(find.text('₹12.50'), findsNWidgets(2));
+
+    await tester.tap(find.byTooltip('Increase quantity'));
+    await tester.pumpAndSettle();
+    expect(find.text('₹25.00'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Decrease quantity'));
+    await tester.pumpAndSettle();
+    expect(find.text('₹12.50'), findsNWidgets(2));
+
+    await tester.tap(find.byTooltip('Decrease quantity'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add menu items to begin an order.'), findsOneWidget);
+  });
+
+  testWidgets('products with sizes require an explicit selection', (tester) async {
+    const noodles = PosProduct(
+      id: 'noodles',
+      name: 'Test noodles',
+      categoryId: 'noodles',
+      pricePaise: 1250,
+      variants: [
+        PosProductVariant(size: PosItemSize.small, pricePaise: 1250),
+        PosProductVariant(size: PosItemSize.large, pricePaise: 2400),
+      ],
+    );
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [noodles])));
+
+    await tester.tap(find.text('Test noodles'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose a size for Test noodles'), findsOneWidget);
+
+    await tester.tap(find.text('Large · ₹24.00'));
+    await tester.pumpAndSettle();
+    expect(find.text('Test noodles · Large'), findsOneWidget);
+    expect(find.text('₹24.00'), findsOneWidget);
+  });
+
+  testWidgets('menu search matches product names and category IDs', (tester) async {
+    const custard = PosProduct(
+      id: 'custard',
+      name: 'Test custard',
+      categoryId: 'desserts',
+      pricePaise: 800,
+    );
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea, custard])));
+
+    await tester.enterText(find.byType(TextField), 'dessert');
+    await tester.pumpAndSettle();
+    expect(find.text('Test custard'), findsOneWidget);
+    expect(find.text('Test tea'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'test tea');
+    await tester.pumpAndSettle();
+    expect(find.text('Test tea'), findsOneWidget);
+    expect(find.text('Test custard'), findsNothing);
+  });
+
+  testWidgets('category filters combine with menu search', (tester) async {
+    const custard = PosProduct(
+      id: 'custard',
+      name: 'Test custard',
+      categoryId: 'desserts',
+      pricePaise: 800,
+    );
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea, custard])));
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'desserts'));
+    await tester.pumpAndSettle();
+    expect(find.text('Test custard'), findsOneWidget);
+    expect(find.text('Test tea'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'tea');
+    await tester.pumpAndSettle();
+    expect(find.text('No menu items match “tea”.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'All categories'));
+    await tester.pumpAndSettle();
+    expect(find.text('Test tea'), findsOneWidget);
+    expect(find.text('Test custard'), findsNothing);
+  });
+
+  testWidgets('preparation notes stay on their own cart line', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea])));
+    await tester.tap(find.text('Test tea'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Add preparation note'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'No onion');
+    await tester.tap(find.text('Save note'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preparation: No onion'), findsOneWidget);
+
+    await tester.tap(find.text('Test tea').first);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Edit preparation note'), findsOneWidget);
+    expect(find.byTooltip('Add preparation note'), findsOneWidget);
+    expect(find.text('Preparation: No onion'), findsOneWidget);
+  });
+
+  testWidgets('catalogue and cart fit a phone-sized viewport', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: PosScreen(products: [tea])));
+    await tester.tap(find.text('Test tea'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Subtotal'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}

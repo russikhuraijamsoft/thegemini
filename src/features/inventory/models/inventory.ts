@@ -59,6 +59,8 @@ export interface CycleCount {
 
 export interface InventoryItem {
   id: string;
+  /** Missing on legacy records; the inventory service resolves these to br_main. */
+  branchId?: string;
   sku: string;
   barcode?: string;
   qrCode?: string;
@@ -84,6 +86,7 @@ export interface InventoryItem {
 
 export interface StockTransaction {
   id: string;
+  branchId?: string;
   itemId: string;
   batchId?: string;
   type: 'STOCK_IN' | 'STOCK_OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OPENING' | 'CLOSING' | 'PHYSICAL_VERIFICATION' | 'DAMAGE' | 'WASTAGE' | 'EXPIRY' | 'RETURN';

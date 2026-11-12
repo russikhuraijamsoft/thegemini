@@ -1,47 +1,41 @@
-# TalkOS - Enterprise Restaurant Management Platform
+# TalkOS — Native Cross-Platform Restaurant Operating System
 
-TalkOS is a world-class, enterprise-grade restaurant management system. This repository contains the core Web POS and Back-Office ERP modules built with React, Vite, Tailwind CSS, and Zustand.
+TalkOS is being developed as a native Flutter application for Android, iOS, Windows and macOS. The product is not being delivered as a browser-only POS, HTML wrapper, Electron web shell, or WebView-based mobile app.
 
-## Features
+## Native application
 
-- **Point of Sale (POS):** Fast, reliable, and touch-friendly ordering system.
-- **Kitchen Display System (KDS):** Real-time order routing and prep timers.
-- **Inventory & Purchasing:** Real-time stock tracking, automated reordering, and recipe management.
-- **CRM & Loyalty:** Customer segmentation, points tracking, and engagement metrics.
-- **Finance & Accounting:** P&L, GST taxation, and operational expense tracking.
-- **HR & Payroll:** Attendance tracking, wage calculations, and staff performance.
-- **AI Business Intelligence:** Forecasting, smart alerts, and interactive AI ownership assistant.
-- **Administration & Configuration:** Branch management, RBAC, and system-wide settings.
+The Flutter application lives in [apps/talkos_flutter](apps/talkos_flutter).
 
-## Architecture
+- Android: APK and Play Store AAB
+- iOS: native iPhone and iPad application
+- Windows: native desktop application
+- macOS: native desktop application
 
-- **Frontend Framework:** React 19 + TypeScript
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS + Lucide Icons
-- **State Management:** Zustand
-- **Backend/Database:** Firebase (Auth, Firestore, Hosting) - *Production Configuration Ready*
+The platform runners are generated from the Flutter SDK in the target environment. See [native app setup](apps/talkos_flutter/README.md).
 
-## Local Development
+## Product modules
 
-```bash
-# Install dependencies
-npm install
+- POS and order management
+- Kitchen Display System (KDS)
+- Tables, QR ordering and kiosk workflows
+- Inventory, recipes, purchasing and suppliers
+- Finance, cash management and reports
+- HR, attendance and payroll
+- CRM, loyalty and customer management
+- Gemini-powered business intelligence
 
-# Start development server on port 3000
-npm run dev
+## Engineering principles
 
-# Run TypeScript Linter
-npm run lint
+- Offline-capable operations with a durable local queue and controlled synchronization.
+- Server-authoritative prices, taxes, payment state, stock movements and permissions.
+- Integer minor currency units for financial calculations.
+- Branch-aware role-based access control.
+- Hardware abstraction for ESC/POS receipt printers, cash drawers and barcode scanners.
+- No API secrets or privileged database credentials embedded in client binaries.
+- Tests and platform builds are release gates, not claims based on documentation alone.
 
-# Build for Production
-npm run build
-```
+## Current status
 
-## Production Readiness
-This application has undergone a full code quality and architecture audit. It complies with clean architecture principles, avoids circular dependencies, and utilizes proper React functional programming paradigms.
+The Flutter workspace is an early development foundation. It includes adaptive native navigation, an initial POS layout, a currency-safe cart domain model and automated tests. The live catalogue, authentication, durable offline storage, synchronization, payment integrations, printer support and the remaining ERP modules are not yet complete.
 
-- **Localization:** Configured for India (INR, GST, 24-Hour Time, DD/MM/YYYY).
-- **Security:** Granular Firestore Rules and Firebase Auth integration setup.
-- **Deployment:** CI/CD via GitHub Actions (`.github/workflows/production-release.yml`) and Firebase Hosting (`firebase.json`).
-
-Please refer to `TALKOS_DEPLOYMENT_GUIDE.md` and `PRODUCTION_READINESS_REPORT.md` for full release notes and procedures.
+The existing React/Vite code remains in the repository as legacy implementation/reference during migration. It is not the target runtime for the native application and must not be represented as production-ready.

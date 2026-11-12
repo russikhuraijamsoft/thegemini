@@ -2,27 +2,42 @@ name: TalkOS Multi-Platform Production Release
 
 on:
   push:
+    branches:
+      - "feat/flutter-native-foundation"
+      - "main"
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish as official GitHub Release"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
-  # 1. Web & PWA Build and Deploy
-  release-web:
-    name: Build Web & PWA
+  # 1. Build and Test Core Web Application (POS, Kiosks, Inventory, CRM/CEMS, KDS)
+  build-web:
+    name: Build TalkOS Web Bundle
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
+
+      - name: Type Check & Lint
+        run: npm run lint
 
       - name: Run Tests
         run: npm run test
@@ -30,75 +45,181 @@ jobs:
       - name: Build Web Application
         run: npm run build
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           NODE_ENV: production
 
-      - name: Archive Web Build Artifact
+      - name: Archive Web Assets
         uses: actions/upload-artifact@v4
         with:
-          name: talkos-web-pwa
+          name: talkos-web-dist
           path: dist/
+          retention-days: 7
 
-  # 2. Desktop Matrix Builds (Windows, macOS, Linux)
+  # 2. Native Desktop Matrix (Windows, Linux, macOS via Electron Builder)
   release-desktop:
-    name: Build Desktop (${{ matrix.os }})
-    needs: [release-web]
+    name: Package Desktop (${{ matrix.target }})
+    needs: [build-web]
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
         include:
           - os: windows-latest
-            artifact_name: talkos-windows-desktop
-          - os: macos-latest
-            artifact_name: talkos-macos-desktop
+            target: windows
+            artifact_name: talkos-windows-x64
           - os: ubuntu-latest
-            artifact_name: talkos-linux-desktop
+            target: linux
+            artifact_name: talkos-linux-x64
+          - os: macos-latest
+            target: macos
+            artifact_name: talkos-macos-universal
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Compile Electron Desktop Bundle
-        run: npm run build:electron
+      - name: Download Built Web Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: talkos-web-dist
+          path: dist/
 
-      - name: Archive Desktop Artifact
+      - name: Compile Electron Desktop Runtime
+        run: |
+          npx esbuild electron/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/main.cjs
+          npx esbuild electron/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/preload.cjs
+
+      - name: Install Desktop Packaging Tools
+        run: npm install --no-save electron@^34.0.0 electron-builder@^25.1.8
+
+      - name: Build Windows Desktop Executable
+        if: matrix.target == 'windows'
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Linux Desktop Package
+        if: matrix.target == 'linux'
+        run: npx electron-builder --linux AppImage tar.gz --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build macOS Desktop Application
+        if: matrix.target == 'macos'
+        run: npx electron-builder --mac dmg zip --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist-electron/
+          path: dist-release/
+          retention-days: 14
 
-  # 3. Mobile Build Pipeline (Android & iOS Sync via Capacitor)
-  release-mobile-sync:
-    name: Sync Capacitor Mobile Native Shells
-    needs: [release-web]
+  # 3. Native Android Mobile APK Packaging (via Capacitor)
+  release-android:
+    name: Package Android APK
+    needs: [build-web]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Node.js 20 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Web Assets for Capacitor
-        run: npm run build
+      - name: Download Built Web Assets
+        uses: actions/download-artifact@v4
+        with:
+          name: talkos-web-dist
+          path: dist/
 
-      - name: Capacitor Sync
-        run: npx cap sync
+      - name: Setup Capacitor Native Android Shell
+        run: |
+          npm install --no-save @capacitor/core@^7.0.0 @capacitor/cli@^7.0.0 @capacitor/android@^7.0.0
+          npx cap add android || true
+          npx cap sync android
+
+      - name: Configure Production Release Signing Key
+        run: node scripts/configure-android-signing.cjs
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build Google Play Store Bundle (AAB) & Production APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease assembleRelease assembleDebug
+
+      - name: Upload Google Play Store Bundle (AAB)
+        uses: actions/upload-artifact@v4
+        with:
+          name: talkos-googleplay-bundle
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      - name: Upload Android APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: talkos-android-apk
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+  # 4. Official GitHub Release Publishing
+  publish-release:
+    name: Publish Native GitHub Release
+    needs: [release-desktop, release-android]
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release == true)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Release Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            all-artifacts/talkos-googleplay-bundle/app-release.aab
+            all-artifacts/talkos-android-apk/*.apk
+            all-artifacts/talkos-windows-x64/*.exe
+            all-artifacts/talkos-windows-x64/*.zip
+            all-artifacts/talkos-linux-x64/*.AppImage
+            all-artifacts/talkos-linux-x64/*.tar.gz
+            all-artifacts/talkos-macos-universal/*.dmg
+            all-artifacts/talkos-macos-universal/*.zip
+          draft: false
+          prerelease: true
+          generate_release_notes: true

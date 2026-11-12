@@ -56,6 +56,14 @@ html, body, #root {
   padding: 0;
   background-color: #ffffff;
   color: #800000;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, [role="button"], input[type="submit"], input[type="button"], a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .dark {

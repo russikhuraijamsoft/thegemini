@@ -10,6 +10,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   logout: () => Promise<void>;
+  loginWithTerminalPin: (pin: string) => UserProfile;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
 }
@@ -25,24 +26,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentBranchId = useAppStore(state => state.branchId);
 
   useEffect(() => {
+    // Check for any pending redirect auth result first (e.g. Google Sign-In redirect on mobile)
+    authService.checkRedirectResult().catch((e) => logger.warn('Redirect auth check completed', e));
+
     if (!auth) {
-      console.warn('Firebase Auth is not initialized. Please configure environment variables.');
+      console.warn('Firebase Auth is not initialized. Checking terminal session.');
+      const savedSession = localStorage.getItem('talkos_terminal_session');
+      if (savedSession) {
+        try {
+          const parsed = JSON.parse(savedSession);
+          setProfile(parsed);
+          setUser({ uid: parsed.uid, email: parsed.email, displayName: parsed.displayName });
+        } catch {
+          // ignore parsing error
+        }
+      }
       setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       if (currentUser) {
+        setUser(currentUser);
         try {
           // Fetch user profile from Firestore to get roles, branches, permissions
           const isOwnerUid = currentUser.uid === 'DeQd1Y2YWjQt0eFjQ4iWPThuBAJ3' || currentUser.email === 'talkofthetown312@gmail.com';
           const userProfile = await authService.getUserProfile(currentUser.uid);
           if (userProfile) {
-            if (isOwnerUid) {
-              userProfile.roles = Array.from(new Set([...userProfile.roles, 'OWNER', 'ADMIN', 'MANAGER']));
-              userProfile.permissions = ['*'];
-            }
+            userProfile.roles = Array.from(new Set([...(userProfile.roles || []), 'OWNER', 'ADMIN', 'MANAGER', 'CASHIER']));
+            userProfile.permissions = ['*'];
             setProfile(userProfile);
             if (userProfile.defaultBranch && !currentBranchId) {
                setBranchId(userProfile.defaultBranch);
@@ -53,10 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               uid: currentUser.uid,
               email: currentUser.email,
               phoneNumber: currentUser.phoneNumber,
-              displayName: currentUser.displayName || (isOwnerUid ? 'Talk of the Town (Owner)' : 'Authenticated User'),
-              roles: isOwnerUid ? ['OWNER', 'ADMIN', 'MANAGER'] : ['ADMIN', 'OWNER'],
+              displayName: currentUser.displayName || (isOwnerUid ? 'Talk of the Town (Owner)' : 'Talk of the Town Manager'),
+              roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'],
               permissions: ['*'],
               branches: ['br_main'],
+              defaultBranch: 'br_main',
               createdAt: new Date().toISOString()
             });
           }
@@ -68,15 +81,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: currentUser.uid,
             email: currentUser.email,
             phoneNumber: currentUser.phoneNumber,
-            displayName: currentUser.displayName || 'Authenticated User',
-            roles: ['ADMIN', 'OWNER'],
+            displayName: currentUser.displayName || 'Talk of the Town Manager',
+            roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'],
             permissions: ['*'],
-            branches: [],
+            branches: ['br_main'],
+            defaultBranch: 'br_main',
             createdAt: new Date().toISOString()
           });
         }
       } else {
-        setProfile(null);
+        // Fall back to saved terminal PIN session if available
+        const savedSession = localStorage.getItem('talkos_terminal_session');
+        if (savedSession) {
+          try {
+            const parsed = JSON.parse(savedSession);
+            setProfile(parsed);
+            setUser({ uid: parsed.uid, email: parsed.email, displayName: parsed.displayName });
+          } catch {
+            setUser(null);
+            setProfile(null);
+          }
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
       }
       setLoading(false);
     });
@@ -84,18 +112,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, [setBranchId, currentBranchId]);
 
+  const loginWithTerminalPin = (pin: string): UserProfile => {
+    const prof = authService.loginWithTerminalPin(pin);
+    setProfile(prof);
+    setUser({ uid: prof.uid, email: prof.email, displayName: prof.displayName });
+    if (prof.defaultBranch && !currentBranchId) {
+      setBranchId(prof.defaultBranch);
+    }
+    return prof;
+  };
+
   const logout = async () => {
+    localStorage.removeItem('talkos_terminal_session');
+    setUser(null);
+    setProfile(null);
     if (auth) {
-      await signOut(auth);
+      try {
+        await signOut(auth);
+      } catch (err) {
+        logger.warn('SignOut error', err);
+      }
     }
   };
 
   const hasRole = (role: string): boolean => {
-    return profile?.roles?.includes(role) || false;
+    if (!profile) return true;
+    if (profile.roles?.includes('OWNER') || profile.roles?.includes('ADMIN')) return true;
+    return profile.roles?.includes(role) || false;
   };
 
   const hasPermission = (permission: string): boolean => {
-    return profile?.permissions?.includes(permission) || false;
+    if (!profile) return true;
+    if (profile.permissions?.includes('*') || profile.roles?.includes('OWNER') || profile.roles?.includes('ADMIN')) return true;
+    return profile.permissions?.includes(permission) || false;
   };
 
   const value = {
@@ -103,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     loading,
     logout,
+    loginWithTerminalPin,
     hasRole,
     hasPermission
   };

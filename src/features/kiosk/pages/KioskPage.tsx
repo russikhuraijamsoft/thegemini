@@ -4,7 +4,7 @@ import {
   Utensils, ShoppingBag, Plus, Minus, ArrowLeft, Check, 
   CreditCard, Sparkles, ChefHat, Clock, Banknote, QrCode, 
   RotateCcw, Globe, Volume2, ShieldCheck, Heart, AlertCircle,
-  X, ChevronRight, CheckCircle2, Printer
+  X, ChevronRight, CheckCircle2, Printer, Search
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { posService } from '../../pos/services/posService';
@@ -23,6 +23,8 @@ export function KioskPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileTrayOpen, setIsMobileTrayOpen] = useState(false);
   
   // Cart
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -94,9 +96,20 @@ export function KioskPage() {
   }, [products]);
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === 'ALL') return products;
-    return products.filter(p => p.category === selectedCategory);
-  }, [products, selectedCategory]);
+    let list = products;
+    if (selectedCategory !== 'ALL') {
+      list = list.filter(p => p.category === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        p.category?.toLowerCase().includes(q) ||
+        p.comboDescription?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [products, selectedCategory, searchQuery]);
 
   const cartTotal = useMemo(() => {
     return cart.reduce((acc, it) => acc + (it.price * it.quantity), 0);
@@ -377,43 +390,69 @@ export function KioskPage() {
     <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-950 flex flex-col overflow-hidden select-none">
       
       {/* Kiosk Header */}
-      <header className="h-20 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between shrink-0 shadow-xs">
-        <div className="flex items-center gap-4">
+      <header className="h-16 sm:h-20 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between shrink-0 shadow-xs">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
             onClick={handleResetToAttract}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 text-slate-700 dark:text-slate-300 font-bold text-xs"
           >
-            <RotateCcw className="w-4 h-4 text-rose-500" /> Start Over
+            <RotateCcw className="w-4 h-4 text-rose-500" /> <span className="hidden sm:inline">Start Over</span>
           </button>
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
           <div>
-            <h2 className="font-black text-lg text-slate-900 dark:text-white leading-tight">
+            <h2 className="font-black text-base sm:text-lg text-slate-900 dark:text-white leading-tight">
               TalkOS Bistro
             </h2>
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-              <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 text-[11px] font-bold">
+              <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 text-[10px] sm:text-[11px] font-bold">
                 {diningOption === 'DINE_IN' ? '🍽️ Dine In' : '🥡 Take Away'}
               </span>
-              <span>Self-Ordering Touch Kiosk</span>
+              <span className="hidden sm:inline">Self-Ordering Touch Kiosk</span>
             </div>
           </div>
         </div>
 
         {/* Right Info */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobileTrayOpen(true)}
+            className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-xs font-black"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Tray ({cart.reduce((s, it) => s + it.quantity, 0)})</span>
+          </button>
           <div className="text-right">
-            <div className="text-xs text-slate-400">Total in Cart</div>
-            <div className="text-xl font-black text-indigo-600 dark:text-indigo-400">₹{grandTotal}</div>
+            <div className="text-[11px] text-slate-400 leading-tight">Total</div>
+            <div className="text-base sm:text-xl font-black text-indigo-600 dark:text-indigo-400">₹{grandTotal}</div>
           </div>
         </div>
       </header>
 
+      {/* Mobile Horizontal Category Bar */}
+      <div className="md:hidden flex items-center gap-2 px-3 py-2.5 overflow-x-auto no-scrollbar bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+        {categories.map(cat => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => setSelectedCategory(cat)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+              selectedCategory === cat
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            {cat === 'ALL' ? '🔥 All Items' : cat}
+          </button>
+        ))}
+      </div>
+
       {/* Main Catalog Body: Left Category Sidebar + Center Menu Grid + Right Cart Sidebar */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
         
-        {/* Categories Bar */}
-        <aside className="w-44 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col py-3 px-2 space-y-1.5 overflow-y-auto shrink-0">
+        {/* Desktop Categories Bar */}
+        <aside className="hidden md:flex w-44 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col py-3 px-2 space-y-1.5 overflow-y-auto shrink-0">
           {categories.map(cat => (
             <button
               key={cat}
@@ -430,7 +469,34 @@ export function KioskPage() {
         </aside>
 
         {/* Menu Grid */}
-        <main className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 bg-slate-50 dark:bg-slate-950">
+          {/* Search & Category Filter Header */}
+          <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search dishes by name or category..."
+                className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="text-xs font-bold text-slate-500 shrink-0">
+              Showing <span className="text-slate-900 dark:text-white">{filteredProducts.length}</span> dishes
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -439,17 +505,17 @@ export function KioskPage() {
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <Utensils className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-3" />
-              <p className="text-base font-bold text-slate-700 dark:text-slate-300">No items available in this category</p>
+              <p className="text-base font-bold text-slate-700 dark:text-slate-300">No items available</p>
               <button
                 type="button"
-                onClick={() => setSelectedCategory('ALL')}
+                onClick={() => { setSelectedCategory('ALL'); setSearchQuery(''); }}
                 className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Show All Menu Items
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               {filteredProducts.map(product => {
                 const inCart = cart
                   .filter(c => c.productId === product.id)
@@ -524,8 +590,8 @@ export function KioskPage() {
           )}
         </main>
 
-        {/* Right Cart Sidebar */}
-        <aside className="w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between shrink-0 shadow-lg">
+        {/* Right Cart Sidebar (Desktop/Landscape) */}
+        <aside className="hidden lg:flex w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex-col justify-between shrink-0 shadow-lg">
           
           <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -623,7 +689,149 @@ export function KioskPage() {
             </button>
           </div>
         </aside>
+
+        {/* Mobile Floating Bottom Tray Bar */}
+        {cart.length > 0 && (
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-between shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500 font-bold">{cart.reduce((s, it) => s + it.quantity, 0)} items in tray</div>
+                <div className="text-base font-black text-slate-900 dark:text-white">₹{grandTotal}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsMobileTrayOpen(true)}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs"
+              >
+                View Tray
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('PAYMENT')}
+                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs flex items-center gap-1 shadow-md active:scale-95"
+              >
+                <span>Checkout</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Mobile Tray Drawer / Bottom Sheet */}
+      {isMobileTrayOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Your Tray</h3>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  {cart.reduce((s, it) => s + it.quantity, 0)} items
+                </span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsMobileTrayOpen(false)}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {cart.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
+                  <Utensils className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-2 stroke-1" />
+                  <p className="text-sm font-semibold">Your tray is empty.</p>
+                </div>
+              ) : (
+                cart.map((item, idx) => (
+                  <div 
+                    key={idx}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                          {item.name}
+                        </div>
+                        {item.size && item.size !== 'Standard' && (
+                          <span className="text-[11px] text-indigo-500 font-semibold">
+                            Size: {item.size}
+                          </span>
+                        )}
+                        {item.notes && (
+                          <p className="text-[11px] text-slate-400 italic">Note: {item.notes}</p>
+                        )}
+                      </div>
+                      <span className="font-extrabold text-xs text-slate-900 dark:text-white">
+                        ₹{item.price * item.quantity}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs text-slate-400">₹{item.price} each</span>
+                      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
+                        <button 
+                          type="button"
+                          onClick={() => updateQuantity(item.cartItemId!, -1)}
+                          className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
+                        <button 
+                          type="button"
+                          onClick={() => updateQuantity(item.cartItemId!, 1)}
+                          className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 space-y-3">
+              <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>₹{cartTotal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>GST (5%)</span>
+                  <span>₹{taxAmount}</span>
+                </div>
+                <div className="flex justify-between text-base font-black text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-slate-700">
+                  <span>Total Due</span>
+                  <span>₹{grandTotal}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={cart.length === 0}
+                onClick={() => {
+                  setIsMobileTrayOpen(false);
+                  setStep('PAYMENT');
+                }}
+                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-black text-sm shadow-xl flex items-center justify-center gap-2"
+              >
+                <span>CHECKOUT & PAY ₹{grandTotal}</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Customization Modal */}
       {customizingProduct && (

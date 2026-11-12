@@ -17,7 +17,9 @@ export const useAppStore = create<AppState>()(
       setTheme: (theme) => set({ theme }),
       branchId: null,
       setBranchId: (branchId) => set({ branchId }),
-      isOfflineMode: !navigator.onLine,
+      // Store initialization also runs during SSR and in Node-based tests,
+      // where the browser's navigator global is unavailable.
+      isOfflineMode: typeof navigator !== 'undefined' && !navigator.onLine,
       setOfflineMode: (isOfflineMode) => set({ isOfflineMode }),
     }),
     {
