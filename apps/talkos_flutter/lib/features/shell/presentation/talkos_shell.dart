@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/default_data.dart';
+import '../../inventory/domain/inventory_deduction_engine.dart';
 import '../../inventory/presentation/inventory_screen.dart';
+import '../../kitchen/domain/kitchen_workflow.dart';
 import '../../kitchen/presentation/kitchen_display_screen.dart';
+import '../../pos/domain/pos_product.dart';
 import '../../pos/presentation/pos_screen.dart';
 
 enum _Section { overview, pos, kitchen, inventory, more }
@@ -15,7 +19,16 @@ const _navigationItems = <({ _Section id, String label, IconData icon })>[
 ];
 
 class TalkOsShell extends StatefulWidget {
-  const TalkOsShell({super.key});
+  const TalkOsShell({
+    super.key,
+    this.initialProducts,
+    this.initialInventoryState,
+    this.initialKitchenState,
+  });
+
+  final List<PosProduct>? initialProducts;
+  final InventoryState? initialInventoryState;
+  final KitchenState? initialKitchenState;
 
   @override
   State<TalkOsShell> createState() => _TalkOsShellState();
@@ -23,6 +36,17 @@ class TalkOsShell extends StatefulWidget {
 
 class _TalkOsShellState extends State<TalkOsShell> {
   _Section _section = _Section.overview;
+  late InventoryState _inventoryState;
+  late KitchenState _kitchenState;
+  late List<PosProduct> _products;
+
+  @override
+  void initState() {
+    super.initState();
+    _products = widget.initialProducts ?? defaultPosProducts;
+    _inventoryState = widget.initialInventoryState ?? createDefaultInventoryState();
+    _kitchenState = widget.initialKitchenState ?? createDefaultKitchenState(_inventoryState);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +55,21 @@ class _TalkOsShellState extends State<TalkOsShell> {
         final desktop = constraints.maxWidth >= 900;
         final index = _navigationItems.indexWhere((item) => item.id == _section);
         final body = switch (_section) {
-          _Section.pos => const PosScreen(),
-          _Section.kitchen => const KitchenDisplayScreen(),
-          _Section.inventory => const InventoryScreen(),
+          _Section.pos => PosScreen(products: _products),
+          _Section.kitchen => KitchenDisplayScreen(
+              state: _kitchenState,
+              onStateChanged: (nextState) {
+                setState(() {
+                  _kitchenState = nextState;
+                  _inventoryState = nextState.inventory;
+                });
+              },
+            ),
+          _Section.inventory => InventoryScreen(
+              state: _inventoryState,
+              itemNames: defaultInventoryItemNames,
+              itemUnits: defaultInventoryItemUnits,
+            ),
           _ => _SectionLanding(section: _section),
         };
 

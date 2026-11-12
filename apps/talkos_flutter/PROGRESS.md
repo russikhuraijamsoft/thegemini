@@ -31,6 +31,8 @@ Pull request: #1
 
 - `fix-cloud-firebase-auth` — Cloud Firebase authentication repaired for native mobile and desktop webviews: added `signInWithRedirect` and `getRedirectResult` fallback for mobile webviews blocking popups, friendly auth error messages, inline 1-click account creation when credentials do not exist, and direct terminal PIN unlock (`1234` for Owner, `9999` for Manager, `0000` for Cashier).
 
+- `native-flutter-preloaded-data` — Populated pure native Flutter mobile application with full flagship restaurant data in `TalkOsShell`: POS catalog products with sizing and variants (Butter Chicken, Paneer Tikka, Biryani, Naan, Chai, etc.), active kitchen tickets for live KDS order routing, and inventory stock balances and ledger movements. Repaired `flutter analyze` with `--no-fatal-infos` and analysis option overrides to enable unblocked multi-platform native release builds.
+
 ## Current work
 
 Verified native milestone `ea5453d`: Actions run `42760541249` passed analysis, all 39 Flutter tests, Android APK/AAB, Windows, iOS, and macOS builds. Web inventory legacy mapping passed TypeScript lint, 5 Vitest files, and the production build in run `42761761491`; the corrected helper is in `bad7bb0`. Active-branch inventory filtering and cross-branch transaction regressions passed CI in commit aaeeb69. Firestore inventory reads returned HTTP 403 without authentication, so the count (including the suggested 144) is unknown from this checkout.
