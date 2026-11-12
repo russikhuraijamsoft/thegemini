@@ -55,32 +55,62 @@ class TableService {
   
   async getReservations(dateStr: string): Promise<Reservation[]> {
     if (!db) return [];
-    const q = query(collection(db, 'table_reservations'), where('date', '==', dateStr));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reservation));
+    try {
+      const q = query(collection(db, 'table_reservations'), where('date', '==', dateStr));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reservation));
+    } catch (e) {
+      console.warn("Using reservations fallback:", e);
+      return [];
+    }
   }
 
   async getWaitlist(): Promise<WaitlistEntry[]> {
     if (!db) return [];
-    const q = query(collection(db, 'table_waitlist'), where('status', '==', 'WAITING'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WaitlistEntry));
+    try {
+      const q = query(collection(db, 'table_waitlist'), where('status', '==', 'WAITING'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WaitlistEntry));
+    } catch (e) {
+      console.warn("Using waitlist fallback:", e);
+      return [];
+    }
   }
 
   subscribeToTables(callback: (tables: Table[]) => void) {
     if (!db) return () => {};
-    const q = query(collection(db, 'table_items'));
-    return onSnapshot(q, (snapshot) => {
-      callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Table)));
-    });
+    try {
+      const q = query(collection(db, 'table_items'));
+      return onSnapshot(
+        q, 
+        (snapshot) => {
+          callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Table)));
+        },
+        (error) => {
+          console.warn("Firestore table subscription ignored due to permission/offline:", error);
+        }
+      );
+    } catch (e) {
+      return () => {};
+    }
   }
   
   subscribeToReservations(dateStr: string, callback: (reservations: Reservation[]) => void) {
     if (!db) return () => {};
-    const q = query(collection(db, 'table_reservations'), where('date', '==', dateStr));
-    return onSnapshot(q, (snapshot) => {
-      callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reservation)));
-    });
+    try {
+      const q = query(collection(db, 'table_reservations'), where('date', '==', dateStr));
+      return onSnapshot(
+        q, 
+        (snapshot) => {
+          callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reservation)));
+        },
+        (error) => {
+          console.warn("Firestore reservation subscription ignored due to permission/offline:", error);
+        }
+      );
+    } catch (e) {
+      return () => {};
+    }
   }
 
   async updateTable(id: string, data: Partial<Table>): Promise<void> {

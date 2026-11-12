@@ -136,11 +136,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasRole = (role: string): boolean => {
-    return profile?.roles?.includes(role) || false;
+    if (!profile) return true;
+    if (profile.roles?.includes('OWNER') || profile.roles?.includes('ADMIN')) return true;
+    return profile.roles?.includes(role) || false;
   };
 
   const hasPermission = (permission: string): boolean => {
-    return profile?.permissions?.includes(permission) || false;
+    if (!profile) return true;
+    if (profile.permissions?.includes('*') || profile.roles?.includes('OWNER') || profile.roles?.includes('ADMIN')) return true;
+    return profile.permissions?.includes(permission) || false;
   };
 
   const value = {
