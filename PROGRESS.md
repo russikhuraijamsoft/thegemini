@@ -30,4 +30,4 @@
 - Eliminates the 300ms mobile tap delay and prevents unresponsive double-tap zoom freezes on touch devices.
 
 ### 5. Local Artifact Delivery
-- Latest full-featured TalkOS production APK downloaded and copied directly to `/sdcard/Download/TalkOS-Full-Production.apk` and `/sdcard/Download/TalkOS-debug.apk` (built in GitHub Actions run 43167507684). Contains the complete enterprise application (POS, floor tables, inventory, CRM, KDS, finance, admin) with offline permission bypasses, PIN login, and touch optimization.
+- Latest full-featured TalkOS production APK downloaded and copied directly to `/sdcard/Download/TalkOS-Full-Production.apk` and `/sdcard/Download/TalkOS-debug.apk` (built in GitHub Actions run `43176929528`). Contains the complete enterprise application (POS, floor tables, inventory, CRM, KDS, finance, admin, HR, reports) with hardened permission fallbacks, zero button tap delay, and offline fail-safes.
